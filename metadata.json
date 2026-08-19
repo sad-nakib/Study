@@ -1,0 +1,6 @@
+{
+  "name": "StudyHub - Class & Resource Organizer",
+  "description": "Centralize and organize YouTube lecture classes, Google Drive lecture sheets, and book PDFs organized by subject.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
