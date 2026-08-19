@@ -196,7 +196,10 @@ export const HomeTilesView: React.FC<HomeTilesViewProps> = ({
           <span>•</span>
           <span><strong>{classes.length}</strong> Total Classes</span>
           <span>•</span>
-          <span>Stored in backend</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+            Live Firebase Firestore
+          </span>
         </div>
       </div>
     </div>

@@ -397,7 +397,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
                 >
                   <Save className="w-4 h-4" />
-                  <span>{editingClassId ? 'Update Class' : 'Save Class to Backend'}</span>
+                  <span>{editingClassId ? 'Update Class in Firestore' : 'Save Class to Firebase'}</span>
                 </button>
               </div>
             </form>
@@ -586,7 +586,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
                 >
                   <FolderPlus className="w-4 h-4" />
-                  <span>{editingSubjectId ? 'Update Subject' : 'Create Subject on Backend'}</span>
+                  <span>{editingSubjectId ? 'Update Subject in Firestore' : 'Create Subject in Firebase'}</span>
                 </button>
               </div>
             </form>

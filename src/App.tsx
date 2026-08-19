@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { useStudyApi } from './hooks/useStudyApi';
+import { useStudyFirestore } from './hooks/useStudyFirestore';
 import { HomeTilesView } from './components/HomeTilesView';
 import { SubjectClassesView } from './components/SubjectClassesView';
 import { EditorView } from './components/EditorView';
 import { Subject, StudyClass, ActiveScreen } from './types';
-import { GraduationCap, Settings, Layers } from 'lucide-react';
+import { GraduationCap, Settings, Layers, Cloud } from 'lucide-react';
 
 export default function App() {
   const {
     subjects,
     classes,
     loading,
-    error,
     addSubject,
     updateSubject,
     deleteSubject,
@@ -19,7 +18,7 @@ export default function App() {
     updateClass,
     deleteClass,
     resetData,
-  } = useStudyApi();
+  } = useStudyFirestore();
 
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('home');
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);

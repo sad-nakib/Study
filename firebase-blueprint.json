@@ -1,0 +1,115 @@
+{
+  "entities": {
+    "Subject": {
+      "title": "Subject",
+      "description": "A study subject entity such as English, Math, or General Knowledge",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the subject"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Subject name"
+        },
+        "code": {
+          "type": "string",
+          "maxLength": 20,
+          "description": "Short code (e.g. ENG, MATH, GK)"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Brief description of the subject"
+        },
+        "color": {
+          "type": "string",
+          "maxLength": 30,
+          "description": "Theme color name (e.g. indigo, emerald, amber)"
+        },
+        "icon": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Icon identifier"
+        },
+        "order": {
+          "type": "number",
+          "description": "Display order"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["name", "color", "order"]
+    },
+    "StudyClass": {
+      "title": "StudyClass",
+      "description": "A class lesson entity linking to a YouTube lecture, Google Drive sheet, and optional book/PDF",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the class"
+        },
+        "subjectId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Parent subject ID"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Class title or lesson name"
+        },
+        "youtubeUrl": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "YouTube lecture video or playlist URL"
+        },
+        "driveSheetUrl": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Google Drive lecture sheet or document URL"
+        },
+        "bookPdfUrl": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Optional book or PDF study material URL"
+        },
+        "topic": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Lesson topic or chapter"
+        },
+        "instructor": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Instructor or teacher name"
+        },
+        "dateAdded": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Date class was added"
+        },
+        "order": {
+          "type": "number",
+          "description": "Ordering within the subject"
+        }
+      },
+      "required": ["subjectId", "title", "youtubeUrl"]
+    }
+  },
+  "firestore": {
+    "/subjects/{subjectId}": {
+      "schema": "Subject",
+      "description": "Collection of subject tiles"
+    },
+    "/classes/{classId}": {
+      "schema": "StudyClass",
+      "description": "Collection of class lessons with YouTube, Google Drive sheet, and study links"
+    }
+  }
+}
