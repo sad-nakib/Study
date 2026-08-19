@@ -13,7 +13,8 @@ import {
   Check, 
   AlertCircle,
   RotateCcw,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
 
 interface EditorViewProps {
@@ -22,6 +23,7 @@ interface EditorViewProps {
   initialMode?: 'add_class' | 'add_subject';
   initialSubjectId?: string;
   onBack: () => void;
+  onLock?: () => void;
   onAddClass: (data: {
     subjectId: string;
     title: string;
@@ -45,6 +47,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
   initialMode = 'add_class',
   initialSubjectId,
   onBack,
+  onLock,
   onAddClass,
   onUpdateClass,
   onDeleteClass,
@@ -247,27 +250,40 @@ export const EditorView: React.FC<EditorViewProps> = ({
         </div>
 
         {/* Tab Toggle: Manage Classes vs Manage Subjects */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
-          <button
-            onClick={() => setTab('classes')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              tab === 'classes'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-            }`}
-          >
-            Add & Manage Classes ({classes.length})
-          </button>
-          <button
-            onClick={() => setTab('subjects')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              tab === 'subjects'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-            }`}
-          >
-            Add & Manage Subjects ({subjects.length})
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <button
+              onClick={() => setTab('classes')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                tab === 'classes'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+              }`}
+            >
+              Add & Manage Classes ({classes.length})
+            </button>
+            <button
+              onClick={() => setTab('subjects')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                tab === 'subjects'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+              }`}
+            >
+              Add & Manage Subjects ({subjects.length})
+            </button>
+          </div>
+
+          {onLock && (
+            <button
+              onClick={onLock}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 text-slate-600 dark:text-slate-300 text-xs font-bold transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
+              title="Lock and exit editor"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Lock</span>
+            </button>
+          )}
         </div>
       </div>
 
