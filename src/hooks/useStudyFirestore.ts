@@ -6,37 +6,21 @@ import {
   setDoc, 
   updateDoc, 
   deleteDoc, 
-  query, 
-  orderBy,
   writeBatch,
   getDocs
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Subject, StudyClass } from '../types';
 
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    operationType,
-    path,
-  };
-  console.error('Firestore Error:', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+// Helper to remove any undefined or null keys from objects before sending to Firestore
+function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (val !== undefined && val !== null) {
+      result[key] = val;
+    }
+  }
+  return result;
 }
 
 const INITIAL_SUBJECTS: Subject[] = [
@@ -175,11 +159,11 @@ export function useStudyFirestore() {
             const batch = writeBatch(db);
             INITIAL_SUBJECTS.forEach((s) => {
               const ref = doc(db, 'subjects', s.id);
-              batch.set(ref, s);
+              batch.set(ref, sanitizeForFirestore(s));
             });
             INITIAL_CLASSES.forEach((c) => {
               const ref = doc(db, 'classes', c.id);
-              batch.set(ref, c);
+              batch.set(ref, sanitizeForFirestore(c));
             });
             await batch.commit();
           } catch (err) {
@@ -191,15 +175,15 @@ export function useStudyFirestore() {
         }
 
         const items: Subject[] = [];
-        snapshot.forEach((doc) => {
-          items.push({ id: doc.id, ...doc.data() } as Subject);
+        snapshot.forEach((docSnap) => {
+          items.push({ id: docSnap.id, ...docSnap.data() } as Subject);
         });
         items.sort((a, b) => (a.order || 0) - (b.order || 0));
         setSubjects(items);
         setLoading(false);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.GET, 'subjects');
+        console.error('Subjects Firestore listener error:', error);
         setLoading(false);
       }
     );
@@ -208,13 +192,13 @@ export function useStudyFirestore() {
       collection(db, 'classes'),
       (snapshot) => {
         const items: StudyClass[] = [];
-        snapshot.forEach((doc) => {
-          items.push({ id: doc.id, ...doc.data() } as StudyClass);
+        snapshot.forEach((docSnap) => {
+          items.push({ id: docSnap.id, ...docSnap.data() } as StudyClass);
         });
         setClasses(items);
       },
       (error) => {
-        handleFirestoreError(error, OperationType.GET, 'classes');
+        console.error('Classes Firestore listener error:', error);
       }
     );
 
@@ -230,45 +214,35 @@ export function useStudyFirestore() {
     const newSubject: Subject = {
       id,
       name: data.name.trim(),
-      code: data.code?.trim() || undefined,
-      description: data.description?.trim() || undefined,
+      code: data.code?.trim() || '',
+      description: data.description?.trim() || '',
       color: data.color || 'indigo',
       icon: data.icon || 'BookOpen',
       order: subjects.length + 1,
     };
 
-    try {
-      const docRef = doc(db, 'subjects', id);
-      await setDoc(docRef, newSubject);
-      return newSubject;
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `subjects/${id}`);
-    }
+    const docRef = doc(db, 'subjects', id);
+    const sanitized = sanitizeForFirestore(newSubject);
+    await setDoc(docRef, sanitized);
+    return newSubject;
   };
 
   // Update Subject in Firestore
   const updateSubject = async (id: string, data: Partial<Subject>) => {
-    try {
-      const docRef = doc(db, 'subjects', id);
-      await updateDoc(docRef, data as any);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `subjects/${id}`);
-    }
+    const docRef = doc(db, 'subjects', id);
+    const sanitized = sanitizeForFirestore(data);
+    await updateDoc(docRef, sanitized);
   };
 
   // Delete Subject & its classes in Firestore
   const deleteSubject = async (id: string) => {
-    try {
-      // Delete subject doc
-      await deleteDoc(doc(db, 'subjects', id));
-      
-      // Delete related classes
-      const relatedClasses = classes.filter((c) => c.subjectId === id);
-      for (const cls of relatedClasses) {
-        await deleteDoc(doc(db, 'classes', cls.id));
-      }
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `subjects/${id}`);
+    // Delete subject doc
+    await deleteDoc(doc(db, 'subjects', id));
+    
+    // Delete related classes
+    const relatedClasses = classes.filter((c) => c.subjectId === id);
+    for (const cls of relatedClasses) {
+      await deleteDoc(doc(db, 'classes', cls.id));
     }
   };
 
@@ -289,45 +263,34 @@ export function useStudyFirestore() {
       title: data.title.trim(),
       youtubeUrl: data.youtubeUrl.trim(),
       driveSheetUrl: data.driveSheetUrl ? data.driveSheetUrl.trim() : '',
-      bookPdfUrl: data.bookPdfUrl ? data.bookPdfUrl.trim() : undefined,
-      topic: data.topic ? data.topic.trim() : undefined,
-      instructor: data.instructor ? data.instructor.trim() : undefined,
+      bookPdfUrl: data.bookPdfUrl ? data.bookPdfUrl.trim() : '',
+      topic: data.topic ? data.topic.trim() : '',
+      instructor: data.instructor ? data.instructor.trim() : '',
       dateAdded: new Date().toISOString().split('T')[0],
     };
 
-    try {
-      const docRef = doc(db, 'classes', id);
-      await setDoc(docRef, newClass);
-      return newClass;
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `classes/${id}`);
-    }
+    const docRef = doc(db, 'classes', id);
+    const sanitized = sanitizeForFirestore(newClass);
+    await setDoc(docRef, sanitized);
+    return newClass;
   };
 
   // Update Class in Firestore
   const updateClass = async (id: string, data: Partial<StudyClass>) => {
-    try {
-      const docRef = doc(db, 'classes', id);
-      await updateDoc(docRef, data as any);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `classes/${id}`);
-    }
+    const docRef = doc(db, 'classes', id);
+    const sanitized = sanitizeForFirestore(data);
+    await updateDoc(docRef, sanitized);
   };
 
   // Delete Class in Firestore
   const deleteClass = async (id: string) => {
-    try {
-      await deleteDoc(doc(db, 'classes', id));
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `classes/${id}`);
-    }
+    await deleteDoc(doc(db, 'classes', id));
   };
 
   // Reset to default sample
   const resetData = async () => {
     setLoading(true);
     try {
-      // Clear existing
       const subjectsSnapshot = await getDocs(collection(db, 'subjects'));
       const classesSnapshot = await getDocs(collection(db, 'classes'));
 
@@ -336,15 +299,15 @@ export function useStudyFirestore() {
       classesSnapshot.forEach((d) => batch.delete(d.ref));
 
       INITIAL_SUBJECTS.forEach((s) => {
-        batch.set(doc(db, 'subjects', s.id), s);
+        batch.set(doc(db, 'subjects', s.id), sanitizeForFirestore(s));
       });
       INITIAL_CLASSES.forEach((c) => {
-        batch.set(doc(db, 'classes', c.id), c);
+        batch.set(doc(db, 'classes', c.id), sanitizeForFirestore(c));
       });
 
       await batch.commit();
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'reset');
+      console.error('Reset error:', error);
     } finally {
       setLoading(false);
     }

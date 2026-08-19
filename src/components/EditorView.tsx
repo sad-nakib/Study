@@ -10,11 +10,10 @@ import {
   Save, 
   Edit3, 
   Trash2, 
-  Layers, 
   Check, 
-  ExternalLink,
+  AlertCircle,
   RotateCcw,
-  Sparkles
+  Loader2
 } from 'lucide-react';
 
 interface EditorViewProps {
@@ -58,7 +57,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
   
   // Class Form State
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
-  const [classSubjectId, setClassSubjectId] = useState<string>(initialSubjectId || subjects[0]?.id || '');
+  const [classSubjectId, setClassSubjectId] = useState<string>(initialSubjectId || (subjects[0]?.id ?? ''));
   const [classTitle, setClassTitle] = useState<string>('');
   const [classYoutubeUrl, setClassYoutubeUrl] = useState<string>('');
   const [classDriveSheetUrl, setClassDriveSheetUrl] = useState<string>('');
@@ -73,59 +72,76 @@ export const EditorView: React.FC<EditorViewProps> = ({
   const [subjectDescription, setSubjectDescription] = useState<string>('');
   const [subjectColor, setSubjectColor] = useState<string>('indigo');
 
-  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    if (subjects.length > 0 && !classSubjectId) {
-      setClassSubjectId(subjects[0].id);
+    if (subjects.length > 0 && (!classSubjectId || !subjects.some(s => s.id === classSubjectId))) {
+      setClassSubjectId(initialSubjectId || subjects[0].id);
     }
-  }, [subjects, classSubjectId]);
+  }, [subjects, classSubjectId, initialSubjectId]);
 
-  const showNotification = (msg: string) => {
-    setFeedbackMsg(msg);
-    setTimeout(() => setFeedbackMsg(null), 3000);
+  const showNotification = (text: string, type: 'success' | 'error' = 'success') => {
+    setFeedbackMsg({ type, text });
+    setTimeout(() => setFeedbackMsg(null), 4000);
   };
 
   // Submit Class Handler
   const handleSubmitClass = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!classSubjectId || !classTitle.trim() || !classYoutubeUrl.trim()) {
-      alert('Please select a Subject and enter Class Title and YouTube link.');
+    if (!classSubjectId) {
+      alert('Please select a subject for this class.');
+      return;
+    }
+    if (!classTitle.trim()) {
+      alert('Please enter a class title.');
+      return;
+    }
+    if (!classYoutubeUrl.trim()) {
+      alert('Please enter a YouTube video URL.');
       return;
     }
 
-    if (editingClassId) {
-      await onUpdateClass(editingClassId, {
-        subjectId: classSubjectId,
-        title: classTitle.trim(),
-        youtubeUrl: classYoutubeUrl.trim(),
-        driveSheetUrl: classDriveSheetUrl.trim(),
-        bookPdfUrl: classBookPdfUrl.trim() || undefined,
-        topic: classTopic.trim() || undefined,
-        instructor: classInstructor.trim() || undefined,
-      });
-      showNotification('Class updated successfully on backend!');
-      setEditingClassId(null);
-    } else {
-      await onAddClass({
-        subjectId: classSubjectId,
-        title: classTitle.trim(),
-        youtubeUrl: classYoutubeUrl.trim(),
-        driveSheetUrl: classDriveSheetUrl.trim(),
-        bookPdfUrl: classBookPdfUrl.trim() || undefined,
-        topic: classTopic.trim() || undefined,
-        instructor: classInstructor.trim() || undefined,
-      });
-      showNotification('New class saved to backend!');
-    }
+    setIsSubmitting(true);
+    try {
+      if (editingClassId) {
+        await onUpdateClass(editingClassId, {
+          subjectId: classSubjectId,
+          title: classTitle.trim(),
+          youtubeUrl: classYoutubeUrl.trim(),
+          driveSheetUrl: classDriveSheetUrl.trim(),
+          bookPdfUrl: classBookPdfUrl.trim(),
+          topic: classTopic.trim(),
+          instructor: classInstructor.trim(),
+        });
+        showNotification('Class updated successfully in Firebase Firestore!');
+        setEditingClassId(null);
+      } else {
+        await onAddClass({
+          subjectId: classSubjectId,
+          title: classTitle.trim(),
+          youtubeUrl: classYoutubeUrl.trim(),
+          driveSheetUrl: classDriveSheetUrl.trim(),
+          bookPdfUrl: classBookPdfUrl.trim(),
+          topic: classTopic.trim(),
+          instructor: classInstructor.trim(),
+        });
+        showNotification('New class added and saved to Firebase Firestore!');
+      }
 
-    // Reset Form
-    setClassTitle('');
-    setClassYoutubeUrl('');
-    setClassDriveSheetUrl('');
-    setClassBookPdfUrl('');
-    setClassTopic('');
-    setClassInstructor('');
+      // Reset Form fields
+      setClassTitle('');
+      setClassYoutubeUrl('');
+      setClassDriveSheetUrl('');
+      setClassBookPdfUrl('');
+      setClassTopic('');
+      setClassInstructor('');
+    } catch (err: any) {
+      console.error('Error saving class:', err);
+      showNotification(`Failed to save class: ${err.message || 'Unknown error'}`, 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Start Edit Class
@@ -161,29 +177,37 @@ export const EditorView: React.FC<EditorViewProps> = ({
       return;
     }
 
-    if (editingSubjectId) {
-      await onUpdateSubject(editingSubjectId, {
-        name: subjectName.trim(),
-        code: subjectCode.trim() || undefined,
-        description: subjectDescription.trim() || undefined,
-        color: subjectColor,
-      });
-      showNotification('Subject updated successfully on backend!');
-      setEditingSubjectId(null);
-    } else {
-      await onAddSubject({
-        name: subjectName.trim(),
-        code: subjectCode.trim() || undefined,
-        description: subjectDescription.trim() || undefined,
-        color: subjectColor,
-      });
-      showNotification('New subject created on backend!');
-    }
+    setIsSubmitting(true);
+    try {
+      if (editingSubjectId) {
+        await onUpdateSubject(editingSubjectId, {
+          name: subjectName.trim(),
+          code: subjectCode.trim(),
+          description: subjectDescription.trim(),
+          color: subjectColor,
+        });
+        showNotification('Subject updated successfully in Firebase!');
+        setEditingSubjectId(null);
+      } else {
+        await onAddSubject({
+          name: subjectName.trim(),
+          code: subjectCode.trim(),
+          description: subjectDescription.trim(),
+          color: subjectColor,
+        });
+        showNotification('New subject created and saved to Firebase!');
+      }
 
-    setSubjectName('');
-    setSubjectCode('');
-    setSubjectDescription('');
-    setSubjectColor('indigo');
+      setSubjectName('');
+      setSubjectCode('');
+      setSubjectDescription('');
+      setSubjectColor('indigo');
+    } catch (err: any) {
+      console.error('Error saving subject:', err);
+      showNotification(`Failed to save subject: ${err.message || 'Unknown error'}`, 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Start Edit Subject
@@ -249,9 +273,11 @@ export const EditorView: React.FC<EditorViewProps> = ({
 
       {/* Feedback Banner */}
       {feedbackMsg && (
-        <div className="p-4 rounded-2xl bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg animate-in fade-in">
-          <Check className="w-4 h-4" />
-          <span>{feedbackMsg}</span>
+        <div className={`p-4 rounded-2xl text-white font-bold text-xs flex items-center gap-2 shadow-lg animate-in fade-in ${
+          feedbackMsg.type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'
+        }`}>
+          {feedbackMsg.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          <span>{feedbackMsg.text}</span>
         </div>
       )}
 
@@ -278,7 +304,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
               {editingClassId && (
                 <button
                   onClick={handleCancelEditClass}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800"
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 cursor-pointer"
                 >
                   Cancel Edit
                 </button>
@@ -292,18 +318,24 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                     Select Subject <span className="text-rose-500">*</span>
                   </label>
-                  <select
-                    required
-                    value={classSubjectId}
-                    onChange={(e) => setClassSubjectId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-                  >
-                    {subjects.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.code || 'Subject'})
-                      </option>
-                    ))}
-                  </select>
+                  {subjects.length === 0 ? (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs rounded-xl border border-amber-200 dark:border-amber-800">
+                      No subjects available. Please add a subject first in the "Add & Manage Subjects" tab.
+                    </div>
+                  ) : (
+                    <select
+                      required
+                      value={classSubjectId}
+                      onChange={(e) => setClassSubjectId(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer font-medium"
+                    >
+                      {subjects.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.code || 'Subject'})
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* Class Title */}
@@ -394,10 +426,20 @@ export const EditorView: React.FC<EditorViewProps> = ({
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
-                  className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
+                  disabled={isSubmitting || subjects.length === 0}
+                  className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>{editingClassId ? 'Update Class in Firestore' : 'Save Class to Firebase'}</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving to Firebase...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>{editingClassId ? 'Update Class in Firestore' : 'Save Class to Firebase'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -409,73 +451,78 @@ export const EditorView: React.FC<EditorViewProps> = ({
               All Saved Classes ({classes.length})
             </h3>
 
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {classes.map((cls) => {
-                const subject = subjects.find((s) => s.id === cls.subjectId);
-                return (
-                  <div
-                    key={cls.id}
-                    className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {subject && (
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                            {subject.name}
+            {classes.length === 0 ? (
+              <p className="text-xs text-slate-400 py-4 text-center">No classes stored in Firebase yet.</p>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {classes.map((cls) => {
+                  const subject = subjects.find((s) => s.id === cls.subjectId);
+                  return (
+                    <div
+                      key={cls.id}
+                      className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {subject && (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              {subject.name}
+                            </span>
+                          )}
+                          <span className="text-sm font-bold text-slate-900 dark:text-white">
+                            {cls.title}
                           </span>
-                        )}
-                        <span className="text-sm font-bold text-slate-900 dark:text-white">
-                          {cls.title}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
-                        <a
-                          href={cls.youtubeUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
-                        >
-                          <Youtube className="w-3.5 h-3.5" />
-                          <span>YouTube Link</span>
-                        </a>
-                        {cls.driveSheetUrl && (
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
                           <a
-                            href={cls.driveSheetUrl}
+                            href={cls.youtubeUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                            className="text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
                           >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>Drive Sheet</span>
+                            <Youtube className="w-3.5 h-3.5" />
+                            <span>YouTube Link</span>
                           </a>
-                        )}
+                          {cls.driveSheetUrl && (
+                            <a
+                              href={cls.driveSheetUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Drive Sheet</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <button
+                          onClick={() => handleEditClassClick(cls)}
+                          className="p-2 rounded-xl text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm(`Delete "${cls.title}"?`)) {
+                              await onDeleteClass(cls.id);
+                              showNotification('Class removed from Firebase');
+                            }
+                          }}
+                          className="p-2 rounded-xl text-rose-600 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <button
-                        onClick={() => handleEditClassClick(cls)}
-                        className="p-2 rounded-xl text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-xs font-semibold flex items-center gap-1 transition-colors"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Delete "${cls.title}"?`)) {
-                            onDeleteClass(cls.id);
-                          }
-                        }}
-                        className="p-2 rounded-xl text-rose-600 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-xs font-semibold flex items-center gap-1 transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -508,7 +555,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     setSubjectCode('');
                     setSubjectDescription('');
                   }}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800"
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 cursor-pointer"
                 >
                   Cancel Edit
                 </button>
@@ -583,10 +630,20 @@ export const EditorView: React.FC<EditorViewProps> = ({
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
-                  className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
                 >
-                  <FolderPlus className="w-4 h-4" />
-                  <span>{editingSubjectId ? 'Update Subject in Firestore' : 'Create Subject in Firebase'}</span>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving Subject...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FolderPlus className="w-4 h-4" />
+                      <span>{editingSubjectId ? 'Update Subject in Firestore' : 'Create Subject in Firebase'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -625,17 +682,18 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEditSubjectClick(s)}
-                        className="p-2 rounded-xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-xs font-semibold transition-colors shadow-xs"
+                        className="p-2 rounded-xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-xs font-semibold transition-colors shadow-xs cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (window.confirm(`Delete subject "${s.name}" and all its classes?`)) {
-                            onDeleteSubject(s.id);
+                            await onDeleteSubject(s.id);
+                            showNotification('Subject and classes removed from Firebase');
                           }
                         }}
-                        className="p-2 rounded-xl text-rose-600 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-xs font-semibold transition-colors"
+                        className="p-2 rounded-xl text-rose-600 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-xs font-semibold transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -649,13 +707,13 @@ export const EditorView: React.FC<EditorViewProps> = ({
           {/* Reset to defaults option */}
           <div className="pt-4 flex justify-center">
             <button
-              onClick={() => {
-                if (window.confirm('Reset data to default English, Math, and GK curriculum?')) {
-                  onResetData();
-                  showNotification('Reset to sample subjects & classes');
+              onClick={async () => {
+                if (window.confirm('Reset data in Firebase to default English, Math, and GK curriculum?')) {
+                  await onResetData();
+                  showNotification('Reset to sample subjects & classes in Firebase');
                 }
               }}
-              className="flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-rose-600 px-4 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-rose-600 px-4 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset to Default English, Math, GK Samples</span>

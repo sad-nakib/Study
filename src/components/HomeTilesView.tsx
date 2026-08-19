@@ -4,22 +4,17 @@ import {
   BookOpen, 
   Calculator, 
   Globe, 
-  FolderPlus, 
-  Edit, 
   GraduationCap, 
   Play, 
-  FileText, 
-  Layers, 
   ChevronRight,
-  Sparkles,
-  Settings
+  Sparkles
 } from 'lucide-react';
 
 interface HomeTilesViewProps {
   subjects: Subject[];
   classes: StudyClass[];
   onSelectSubject: (subject: Subject) => void;
-  onOpenEditor: (mode?: 'add_class' | 'add_subject') => void;
+  onOpenEditor?: (mode?: 'add_class' | 'add_subject') => void;
 }
 
 const colorThemeStyles: Record<string, { bg: string; border: string; text: string; iconBg: string; badge: string; shadow: string }> = {
@@ -77,7 +72,6 @@ export const HomeTilesView: React.FC<HomeTilesViewProps> = ({
   subjects,
   classes,
   onSelectSubject,
-  onOpenEditor,
 }) => {
   const getSubjectIcon = (name: string) => {
     const lower = name.toLowerCase();
@@ -104,10 +98,8 @@ export const HomeTilesView: React.FC<HomeTilesViewProps> = ({
         </p>
       </div>
 
-      {/* Main 4-Tile Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        
-        {/* Subject Tiles */}
+      {/* Subject Tiles Grid */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${subjects.length >= 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-6 max-w-5xl mx-auto`}>
         {subjects.map((subj) => {
           const subjectClasses = classes.filter((c) => c.subjectId === subj.id);
           const theme = colorThemeStyles[subj.color] || colorThemeStyles.indigo;
@@ -116,7 +108,7 @@ export const HomeTilesView: React.FC<HomeTilesViewProps> = ({
             <div
               key={subj.id}
               onClick={() => onSelectSubject(subj)}
-              className={`group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br ${theme.bg} p-7 text-white shadow-xl ${theme.shadow} border ${theme.border} transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98] flex flex-col justify-between min-h-[210px]`}
+              className={`group relative cursor-pointer overflow-hidden rounded-3xl bg-gradient-to-br ${theme.bg} p-7 text-white shadow-xl ${theme.shadow} border ${theme.border} transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98] flex flex-col justify-between min-h-[220px]`}
             >
               {/* Decorative background glow */}
               <div className="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-white/10 blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
@@ -158,40 +150,11 @@ export const HomeTilesView: React.FC<HomeTilesViewProps> = ({
             </div>
           );
         })}
-
-        {/* 4th Tile: Editor (Add Subject or Class) */}
-        <div
-          onClick={() => onOpenEditor('add_class')}
-          className="group relative cursor-pointer overflow-hidden rounded-3xl bg-white dark:bg-slate-900 p-7 text-slate-800 dark:text-slate-100 shadow-xl shadow-slate-900/5 hover:shadow-indigo-500/15 border-2 border-dashed border-indigo-400 dark:border-indigo-600/60 hover:border-indigo-600 transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98] flex flex-col justify-between min-h-[210px]"
-        >
-          {/* Top Row: Editor Icon & Actions */}
-          <div className="flex items-center justify-between relative z-10">
-            <div className="p-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-200 dark:border-indigo-800">
-              <Settings className="w-8 h-8" />
-            </div>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1.5">
-              <Edit className="w-3 h-3" />
-              <span>Editor Tile</span>
-            </span>
-          </div>
-
-          {/* Editor Title & Description */}
-          <div className="relative z-10 space-y-1.5 mt-6">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center justify-between group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-              <span>Editor & Manager</span>
-              <ChevronRight className="w-6 h-6 transform group-hover:translate-x-1 transition-transform text-indigo-500" />
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Add new classes, update YouTube & Drive links, or create new subjects.
-            </p>
-          </div>
-        </div>
-
       </div>
 
       {/* Quick Summary Pill below grid */}
       <div className="max-w-md mx-auto text-center pt-2">
-        <div className="inline-flex items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700">
+        <div className="inline-flex items-center gap-4 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700 shadow-xs">
           <span><strong>{subjects.length}</strong> Subjects</span>
           <span>•</span>
           <span><strong>{classes.length}</strong> Total Classes</span>

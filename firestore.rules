@@ -2,49 +2,24 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isValidId(id) {
-      return id is string && id.size() > 0 && id.size() <= 128;
-    }
-
-    function isValidSubject(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() <= 100
-        && (data.color is string && data.color.size() <= 30)
-        && (!('code' in data) || data.code is string && data.code.size() <= 20)
-        && (!('description' in data) || data.description is string && data.description.size() <= 500);
-    }
-
-    function isValidClass(data) {
-      return data.subjectId is string && data.subjectId.size() > 0 && data.subjectId.size() <= 128
-        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
-        && data.youtubeUrl is string && data.youtubeUrl.size() > 0 && data.youtubeUrl.size() <= 1000
-        && (!('driveSheetUrl' in data) || data.driveSheetUrl is string && data.driveSheetUrl.size() <= 1000)
-        && (!('bookPdfUrl' in data) || data.bookPdfUrl is string && data.bookPdfUrl.size() <= 1000)
-        && (!('topic' in data) || data.topic is string && data.topic.size() <= 200)
-        && (!('instructor' in data) || data.instructor is string && data.instructor.size() <= 100);
-    }
-
     // Connection test document
     match /test/connection {
-      allow read: if true;
+      allow read, write: if true;
     }
 
     // Subjects Collection
     match /subjects/{subjectId} {
-      allow read: if true;
-      allow create, update: if isValidId(subjectId) && isValidSubject(request.resource.data);
-      allow delete: if isValidId(subjectId);
+      allow read, write: if true;
     }
 
     // Classes Collection
     match /classes/{classId} {
-      allow read: if true;
-      allow create, update: if isValidId(classId) && isValidClass(request.resource.data);
-      allow delete: if isValidId(classId);
+      allow read, write: if true;
     }
 
-    // Fallback default deny
+    // Fallback
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }
