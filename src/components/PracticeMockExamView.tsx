@@ -212,48 +212,56 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
     let questionsToUse: PracticeQuestion[] = [];
 
     const targetClass = examMode === 'class_wise' ? classes.find((c) => c.id === selectedClassId) : undefined;
+    const targetSubjObj = targetClass ? subjects.find((s) => s.id === targetClass.subjectId) : undefined;
+    const targetSubjName = targetSubjObj ? targetSubjObj.name.toLowerCase() : '';
 
     try {
-      // Call Backend API to generate questions (Gemini 2.0 Flash in backend by default)
+      // Create an AbortController with 3.5s timeout for ultra-fast AI generation response
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
       const res = await fetch('/api/practice/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           target: selectedTarget,
-          subjectFilter: examMode === 'subject_wise' ? selectedSubjectFilter : 'all',
+          subjectFilter: examMode === 'subject_wise' ? selectedSubjectFilter : targetSubjName.includes('math') ? 'math' : targetSubjName.includes('english') ? 'english' : targetSubjName.includes('ana') ? 'analytical' : 'all',
           questionCount: questionCount,
           specificTopic: targetClass?.topic || '',
           sheetContext: targetClass ? `${targetClass.title} (Topic: ${targetClass.topic || 'General'})` : '',
-          model: 'google/gemini-2.0-flash-001', // Default model
+          model: 'gemini-3.1-flash-lite',
         }),
       });
 
+      clearTimeout(timeoutId);
+
       if (res.ok) {
         const data = await res.json();
-        if (data.questions && data.questions.length > 0) {
+        if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
           questionsToUse = data.questions;
         }
       }
     } catch (e) {
-      console.warn('Backend question generator error, using calibrated bank:', e);
+      console.warn('Fast question generator fallback to authentic question bank:', e);
     } finally {
       setIsGeneratingAi(false);
     }
 
-    // Fallback or blend with curated BUP FBS & IBA Admission Question Bank
+    // Fallback or blend with curated authentic Admission Question Bank
     if (questionsToUse.length === 0) {
       let filtered = [...ADMISSION_QUESTION_BANK];
 
       if (examMode === 'subject_wise' && selectedSubjectFilter !== 'all') {
         filtered = filtered.filter((q) => q.subject === selectedSubjectFilter);
-      }
-
-      if (selectedTarget === 'bup_fbs') {
-        filtered = filtered.filter((q) => !q.targetExam || q.targetExam.includes('BUP') || q.subject !== 'analytical');
-      } else if (selectedTarget === 'ju_iba') {
-        filtered = filtered.filter((q) => !q.targetExam || q.targetExam.includes('JU') || q.subject === 'analytical');
-      } else if (selectedTarget === 'ru_iba') {
-        filtered = filtered.filter((q) => !q.targetExam || q.targetExam.includes('RU') || q.subject === 'math');
+      } else if (examMode === 'class_wise' && targetSubjName) {
+        if (targetSubjName.includes('math')) {
+          filtered = filtered.filter((q) => q.subject === 'math');
+        } else if (targetSubjName.includes('eng')) {
+          filtered = filtered.filter((q) => q.subject === 'english');
+        } else if (targetSubjName.includes('ana')) {
+          filtered = filtered.filter((q) => q.subject === 'analytical');
+        }
       }
 
       if (filtered.length === 0) {
@@ -265,14 +273,18 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
       questionsToUse = shuffled.slice(0, questionCount);
     }
 
-    // If still less than requested, pad
+    // If still less than requested, pad with duplicate keys
     if (questionsToUse.length < questionCount && ADMISSION_QUESTION_BANK.length > 0) {
       const extraNeeded = questionCount - questionsToUse.length;
       const extra = ADMISSION_QUESTION_BANK.slice(0, extraNeeded).map((q, idx) => ({
         ...q,
-        id: `${q.id}-dup-${idx}`,
+        id: `${q.id}-dup-${idx}-${Date.now()}`,
       }));
       questionsToUse = [...questionsToUse, ...extra];
+    }
+
+    if (questionsToUse.length === 0) {
+      questionsToUse = [...ADMISSION_QUESTION_BANK];
     }
 
     setActiveQuestions(questionsToUse);
@@ -846,7 +858,8 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
   // -------------------------------------------------------------
   // PHASE 2: ACTIVE SINGLE-PAGE MOCK EXAM SCREEN
   // -------------------------------------------------------------
-  if (phase === 'exam' && activeQuestions.length > 0) {
+  if (phase === 'exam') {
+    const displayQuestions = activeQuestions.length > 0 ? activeQuestions : ADMISSION_QUESTION_BANK.slice(0, questionCount);
     const isTimeUrgent = timeRemainingSeconds < 120;
     const answeredCount = Object.keys(userAnswers).length;
 
@@ -859,7 +872,7 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
           {/* Progress Indicator */}
           <div className="flex items-center gap-3">
             <span className="text-xs font-mono font-medium px-3.5 py-1 rounded-full bg-[#EADDFF] text-[#21005D]">
-              {answeredCount} / {activeQuestions.length} Answered
+              {answeredCount} / {displayQuestions.length} Answered
             </span>
             <span className="hidden sm:inline-block text-xs font-medium text-[#49454F]">
               {selectedTarget === 'bup_fbs' ? 'BUP FBS Mock' : selectedTarget === 'ju_iba' ? 'JU IBA Mock' : selectedTarget === 'ru_iba' ? 'RU IBA Mock' : 'IBA / FBS Mock'}
@@ -892,7 +905,7 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
             Jump to Question:
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-            {activeQuestions.map((q, idx) => {
+            {displayQuestions.map((q, idx) => {
               const isAnswered = userAnswers[q.id] !== undefined;
               const isMarked = !!markedForReview[q.id];
 
@@ -920,7 +933,7 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
 
         {/* ALL QUESTIONS RENDERED ON A SINGLE SCROLLING PAGE */}
         <div className="space-y-6">
-          {activeQuestions.map((q, idx) => {
+          {displayQuestions.map((q, idx) => {
             const isSelectedAny = userAnswers[q.id] !== undefined;
             const isMarked = !!markedForReview[q.id];
 

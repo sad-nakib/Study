@@ -406,6 +406,59 @@ Make sure every question has high analytical rigor, tricky distractor options, a
       const openRouterKey = process.env.OPENROUTER_API_KEY;
       const geminiKey = process.env.GEMINI_API_KEY;
 
+      // Helper function to call Gemini with automatic fallback across valid models in case of 503 high demand or 429 rate limits
+      async function callGeminiCascade(prompt: string, isJson: boolean = false) {
+        if (!geminiKey || geminiKey === "MY_GEMINI_API_KEY") return null;
+        
+        const { GoogleGenAI } = await import("@google/genai");
+        const ai = new GoogleGenAI({
+          apiKey: geminiKey,
+          httpOptions: {
+            headers: {
+              "User-Agent": "aistudio-build",
+            },
+          },
+        });
+
+        // Try gemini-3.1-flash-lite and gemini-flash-latest first if 3.7 is saturated, with fast timeouts
+        const modelsToTry = [
+          "gemini-3.1-flash-lite",
+          "gemini-3.7-flash",
+          "gemini-flash-latest",
+        ];
+
+        for (const modelName of modelsToTry) {
+          try {
+            const generatePromise = ai.models.generateContent({
+              model: modelName,
+              contents: prompt,
+              config: isJson
+                ? {
+                    responseMimeType: "application/json",
+                    temperature: 0.4,
+                  }
+                : {
+                    temperature: 0.4,
+                  },
+            });
+
+            // 5 second max timeout per model attempt
+            const timeoutPromise = new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error(`Timeout on model ${modelName}`)), 5000)
+            );
+
+            const response: any = await Promise.race([generatePromise, timeoutPromise]);
+            const text = response?.text?.trim();
+            if (text) {
+              return { text, model: modelName };
+            }
+          } catch (modelErr: any) {
+            console.warn(`[Gemini Cascade] Model ${modelName} issue: ${modelErr?.message || modelErr?.status || '503/error'}`);
+          }
+        }
+        return null;
+      }
+
       // 1. Attempt OpenRouter if key is available
       if (openRouterKey && openRouterKey !== "MY_OPENROUTER_API_KEY") {
         try {
@@ -418,7 +471,7 @@ Make sure every question has high analytical rigor, tricky distractor options, a
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: model || "google/gemini-2.0-flash-001",
+              model: model || "google/gemini-2.5-flash",
               messages: [
                 { role: "system", content: promptSystem },
                 { role: "user", content: promptUser }
@@ -437,7 +490,7 @@ Make sure every question has high analytical rigor, tricky distractor options, a
               if (parsed.questions && Array.isArray(parsed.questions)) {
                 res.json({
                   source: "openrouter",
-                  model: model || "google/gemini-2.0-flash-001",
+                  model: model || "google/gemini-2.5-flash",
                   questions: parsed.questions.map((q: any, i: number) => ({
                     ...q,
                     id: q.id || `ai-${Date.now()}-${i}`,
@@ -452,42 +505,27 @@ Make sure every question has high analytical rigor, tricky distractor options, a
         }
       }
 
-      // 2. Fallback to Gemini if key available
+      // 2. Cascade Gemini models if key available
       if (geminiKey && geminiKey !== "MY_GEMINI_API_KEY") {
         try {
-          const { GoogleGenAI } = await import("@google/genai");
-          const ai = new GoogleGenAI({
-            apiKey: geminiKey,
-            httpOptions: {
-              headers: {
-                "User-Agent": "aistudio-build",
-              },
-            },
-          });
-          const response = await ai.models.generateContent({
-            model: "gemini-3.7-flash",
-            contents: `${promptSystem}\n\n${promptUser}`,
-            config: {
-              responseMimeType: "application/json",
-              temperature: 0.4,
-            },
-          });
-
-          const rawText = response.text || "";
-          const parsed = JSON.parse(rawText);
-          if (parsed.questions && Array.isArray(parsed.questions)) {
-            res.json({
-              source: "gemini",
-              model: "gemini-3.7-flash",
-              questions: parsed.questions.map((q: any, i: number) => ({
-                ...q,
-                id: q.id || `gemini-${Date.now()}-${i}`,
-              })),
-            });
-            return;
+          const cascadeResult = await callGeminiCascade(`${promptSystem}\n\n${promptUser}`, true);
+          if (cascadeResult && cascadeResult.text) {
+            const cleanJson = cascadeResult.text.replace(/```json/g, "").replace(/```/g, "").trim();
+            const parsed = JSON.parse(cleanJson);
+            if (parsed.questions && Array.isArray(parsed.questions)) {
+              res.json({
+                source: "gemini",
+                model: cascadeResult.model,
+                questions: parsed.questions.map((q: any, i: number) => ({
+                  ...q,
+                  id: q.id || `gemini-${Date.now()}-${i}`,
+                })),
+              });
+              return;
+            }
           }
         } catch (geminiErr) {
-          console.warn("Gemini API call error, falling back to curated bank:", geminiErr);
+          console.warn("Gemini cascade failed, falling back to curated bank:", geminiErr);
         }
       }
 
@@ -539,7 +577,7 @@ Keep it concise, clear, and actionable.`;
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "google/gemini-2.0-flash-001",
+              model: "google/gemini-2.5-flash",
               messages: [{ role: "user", content: prompt }],
             }),
           });
@@ -566,12 +604,29 @@ Keep it concise, clear, and actionable.`;
             },
           },
         });
-        const resp = await ai.models.generateContent({
-          model: "gemini-3.7-flash",
-          contents: prompt,
-        });
-        res.json({ explanation: resp.text || "Detailed breakdown provided." });
-        return;
+
+        const modelsToTry = [
+          "gemini-3.7-flash",
+          "gemini-3.1-flash-lite",
+          "gemini-flash-latest",
+          "gemini-3.1-pro-preview",
+        ];
+
+        for (const modelName of modelsToTry) {
+          try {
+            const resp = await ai.models.generateContent({
+              model: modelName,
+              contents: prompt,
+            });
+            if (resp.text) {
+              res.json({ explanation: resp.text, modelUsed: modelName });
+              return;
+            }
+          } catch (modelErr: any) {
+            console.warn(`[Gemini Explain Cascade] Model ${modelName} error (${modelErr?.status || modelErr?.code}), trying next...`);
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+        }
       }
 
       res.json({

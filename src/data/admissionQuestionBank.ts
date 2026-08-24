@@ -395,5 +395,119 @@ export const ADMISSION_QUESTION_BANK: PracticeQuestion[] = [
     explanation: 'Analyze pattern in MARKET -> NCUOJX:\n- M (+1) -> N\n- A (+2) -> C\n- R (+3) -> U\n- K (+4) -> O\n- E (+5) -> J\n- T (+6) -> Z (X is +4? Check: M(+1)=N, A(+2)=C, R(+3)=U, K(+4)=O, E(+5)=J, T(+4)=X or T+4=X). For PROFIT with progressive shifts (+1, +2, +3, +4, +5, +6):\n- P (+1) -> Q\n- R (+2) -> T\n- O (+3) -> R\n- F (+4) -> J -> wait, F(6)+4=10(J) or K (+5): P(+1)=Q, R(+2)=T, O(+3)=R, F(+5)=K, I(+3)=L, T(+5)=Y -> QTRKLY.',
     formulaOrRule: 'Letter Position Shift: Alphabetical numerical mapping (A=1...Z=26) with systematic shift increments.',
     sourceSheet: 'Analytical Coding Sheet'
+  },
+  {
+    id: 'eng-bup-4',
+    subject: 'english',
+    targetExam: 'BUP FBS',
+    topic: 'Conditional Sentences & Inversion',
+    difficulty: 'Medium',
+    question: 'Had the central bank _______ interest rates earlier, inflation would not have surged to double digits.',
+    options: [
+      'raised',
+      'rise',
+      'rose',
+      'raise',
+      'been raising'
+    ],
+    correctIndex: 0,
+    explanation: 'Third conditional inverted form: "Had + subject + past participle (V3)... would have + V3". The past participle of raise (transitive verb meaning to increase) is "raised".',
+    formulaOrRule: 'Inverted Third Conditional: Had + S + V3, S + would have + V3.',
+    sourceSheet: 'Conditionals Sheet'
+  },
+  {
+    id: 'eng-juiba-3',
+    subject: 'english',
+    targetExam: 'JU IBA',
+    topic: 'Redundancy & Wordiness',
+    difficulty: 'Medium',
+    question: 'Choose the option that eliminates redundancy and maintains grammatical economy:',
+    options: [
+      'The company will revert back with a reply in the near future.',
+      'The company will revert with a reply in the near future.',
+      'The company will reply soon.',
+      'The company will reply back in the near future time.',
+      'The company will soon revert back in response.'
+    ],
+    correctIndex: 2,
+    explanation: '"Revert back" is redundant because revert means to return. "In the near future time" is wordy. "The company will reply soon" is crisp, grammatically concise, and free of tautology.',
+    formulaOrRule: 'GMAT / IBA Sentence Correction: Brevity and economy of expression without altered meaning.',
+    sourceSheet: 'Sentence Correction Sheet'
+  },
+  {
+    id: 'math-bup-4',
+    subject: 'math',
+    targetExam: 'BUP FBS',
+    topic: 'Simple & Compound Interest',
+    difficulty: 'Medium',
+    question: 'A sum of money invested at compound interest doubles itself in 5 years. In how many years will it become 8 times of itself at the same annual interest rate?',
+    options: [
+      '10 years',
+      '12 years',
+      '15 years',
+      '20 years',
+      '25 years'
+    ],
+    correctIndex: 2,
+    explanation: 'At compound interest, if an amount becomes 2^1 times in 5 years, it becomes 2^n times in (n * 5) years. 8 = 2^3, so time required = 3 * 5 = 15 years.',
+    formulaOrRule: 'Rule of Compound Growth: A = P(1 + r/100)^t. If 2x takes t years, 2^n takes n*t years.',
+    sourceSheet: 'Interest Rates Sheet'
+  },
+  {
+    id: 'math-juiba-3',
+    subject: 'math',
+    targetExam: 'JU IBA',
+    topic: 'Number Theory & Remainder Theorem',
+    difficulty: 'Hard',
+    question: 'What is the remainder when (7^84) is divided by 100?',
+    options: [
+      '01',
+      '07',
+      '43',
+      '49',
+      '51'
+    ],
+    correctIndex: 0,
+    explanation: 'Find cyclicity of powers of 7: 7^1=07, 7^2=49, 7^3=343 (43), 7^4=2401 (01). The last two digits repeat every 4 powers. Since 84 is divisible by 4 (84 = 4 * 21), 7^84 ends in the same last two digits as 7^4, which is 01.',
+    formulaOrRule: 'Cyclicity of Last Two Digits: 7^4 = 2401 = 1 (mod 100). Thus (7^4)^21 = 1^21 = 1 (mod 100).',
+    sourceSheet: 'Number Properties Sheet'
+  },
+  {
+    id: 'ana-bup-3',
+    subject: 'analytical',
+    targetExam: 'BUP FBS',
+    topic: 'Analytical Problem Solving (Venn Diagram)',
+    difficulty: 'Medium',
+    question: 'In a class of 50 business students, 30 study Finance, 25 study Marketing, and 10 study both Finance and Marketing. How many students study neither Finance nor Marketing?',
+    options: [
+      '3',
+      '5',
+      '8',
+      '10',
+      '15'
+    ],
+    correctIndex: 1,
+    explanation: 'Total students = 50.\nNumber studying at least one subject = n(F) + n(M) - n(F ∩ M) = 30 + 25 - 10 = 45.\nStudents studying neither = 50 - 45 = 5 students.',
+    formulaOrRule: 'Inclusion-Exclusion Principle: n(A ∪ B) = n(A) + n(B) - n(A ∩ B). Neither = Total - n(A ∪ B).',
+    sourceSheet: 'Set Theory & Analytical Sheet'
+  },
+  {
+    id: 'ana-juiba-3',
+    subject: 'analytical',
+    targetExam: 'JU IBA',
+    topic: 'Course of Action & Policy Logic',
+    difficulty: 'Medium',
+    question: 'Statement: Traffic congestion on the main airport expressway has increased by 40% over the past six months, causing significant flight delays for business travelers.\nCourses of Action:\nI. The municipal authority should immediately introduce heavy peak-hour toll fees to discourage non-essential passenger vehicles.\nII. An integrated shuttle rapid-transit service should be launched connecting central business hubs directly to the terminal.\nWhich course(s) of action logically follow?',
+    options: [
+      'Only I follows',
+      'Only II follows',
+      'Either I or II follows',
+      'Both I and II follow',
+      'Neither I nor II follows'
+    ],
+    correctIndex: 3,
+    explanation: 'Both actions address the congestion problem systematically: I manages demand during peak bottleneck windows, while II provides an efficient mass transit alternative to remove private cars from the corridor.',
+    formulaOrRule: 'Decision Logic: A feasible course of action must directly alleviate the problem without causing disproportionate harm.',
+    sourceSheet: 'Critical Decision Sheet'
   }
 ];
