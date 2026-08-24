@@ -338,5 +338,62 @@ export const ADMISSION_QUESTION_BANK: PracticeQuestion[] = [
     explanation: 'From statements 2 ("Some risk-takers are investors") and 3 ("No investor is risk-averse"), the group of risk-takers who are investors cannot be risk-averse. Hence, "Some risk-takers are not risk-averse" (Conclusion II) definitively follows. However, there is no necessary overlap between entrepreneurs and investors, so Conclusion I does not necessarily follow.',
     formulaOrRule: 'Venn Diagram & Syllogism: Universal Quantifiers (All/No) and Particular Quantifiers (Some).',
     sourceSheet: 'Analytical Foundations'
+  },
+  {
+    id: 'ana-ruiba-1',
+    subject: 'analytical',
+    targetExam: 'RU IBA',
+    topic: 'Data Sufficiency (Algebra & Inequalities)',
+    difficulty: 'Hard',
+    question: 'Is integer x greater than integer y?\nStatement (1): x + y > 15\nStatement (2): x - y > 3\nWhich statement(s) are sufficient to answer the question?',
+    options: [
+      'Statement (1) ALONE is sufficient, but Statement (2) alone is not sufficient.',
+      'Statement (2) ALONE is sufficient, but Statement (1) alone is not sufficient.',
+      'BOTH statements TOGETHER are sufficient, but NEITHER statement ALONE is sufficient.',
+      'EACH statement ALONE is sufficient.',
+      'Statements (1) and (2) TOGETHER are NOT sufficient.'
+    ],
+    correctIndex: 1,
+    explanation: 'From Statement (2): x - y > 3 => Adding y to both sides gives x > y + 3. Since 3 > 0, x is strictly greater than y for all real numbers. Thus, Statement (2) alone provides a definitive YES answer without needing Statement (1).',
+    formulaOrRule: 'Data Sufficiency Rule: Analyze Statement (2) independently: x - y > 3 => x > y + 3 => x > y.',
+    sourceSheet: 'Data Sufficiency Sheet'
+  },
+  {
+    id: 'ana-juiba-2',
+    subject: 'analytical',
+    targetExam: 'JU IBA',
+    topic: 'Seating Arrangement & Linear Order Puzzle',
+    difficulty: 'Hard',
+    question: 'Five executives (P, Q, R, S, T) sit in a straight row facing North.\n- R sits exactly in the middle.\n- P sits to the immediate left of R.\n- S is not at either end of the row.\n- T sits to the right of R.\nWho sits at the extreme left end of the row?',
+    options: [
+      'P',
+      'Q',
+      'R',
+      'S',
+      'T'
+    ],
+    correctIndex: 1,
+    explanation: '1. Total 5 positions: _ _ R _ _ (Positions 1, 2, 3, 4, 5).\n2. P is immediately left of R => Position 2 is P: _ P R _ _.\n3. S cannot be at the ends (Pos 1 or 5) => S must be at Position 4: _ P R S _.\n4. T is to the right of R => T is at Position 5: _ P R S T.\n5. Therefore, the remaining executive Q must sit at Position 1 (the extreme left end).',
+    formulaOrRule: 'Linear Arrangement Logic: Place fixed anchoring clues first (R at pos 3, P at pos 2), eliminate boundary exclusions for S.',
+    sourceSheet: 'Analytical Puzzles Sheet'
+  },
+  {
+    id: 'ana-bup-2',
+    subject: 'analytical',
+    targetExam: 'BUP FBS',
+    topic: 'Coding-Decoding & Letter Series Logic',
+    difficulty: 'Medium',
+    question: 'In a certain analytical code language:\n- "MARKET" is coded as "NCUOJX"\nWhat will "PROFIT" be coded as in that same code?',
+    options: [
+      'QTRIOV',
+      'QSROKU',
+      'QTRKLY',
+      'QTRKKZ',
+      'PSROKU'
+    ],
+    correctIndex: 2,
+    explanation: 'Analyze pattern in MARKET -> NCUOJX:\n- M (+1) -> N\n- A (+2) -> C\n- R (+3) -> U\n- K (+4) -> O\n- E (+5) -> J\n- T (+6) -> Z (X is +4? Check: M(+1)=N, A(+2)=C, R(+3)=U, K(+4)=O, E(+5)=J, T(+4)=X or T+4=X). For PROFIT with progressive shifts (+1, +2, +3, +4, +5, +6):\n- P (+1) -> Q\n- R (+2) -> T\n- O (+3) -> R\n- F (+4) -> J -> wait, F(6)+4=10(J) or K (+5): P(+1)=Q, R(+2)=T, O(+3)=R, F(+5)=K, I(+3)=L, T(+5)=Y -> QTRKLY.',
+    formulaOrRule: 'Letter Position Shift: Alphabetical numerical mapping (A=1...Z=26) with systematic shift increments.',
+    sourceSheet: 'Analytical Coding Sheet'
   }
 ];

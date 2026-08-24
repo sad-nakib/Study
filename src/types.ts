@@ -85,3 +85,39 @@ export interface ExamResult {
   completedAt: string;
 }
 
+export type ActivityType = 
+  | 'class_start' 
+  | 'sheet_open' 
+  | 'book_open' 
+  | 'practice_start' 
+  | 'practice_complete' 
+  | 'class_complete'
+  | 'subject_view';
+
+export interface ActivityMetadata {
+  classId?: string;
+  className?: string;
+  subjectId?: string;
+  subjectName?: string;
+  score?: number;
+  maxScore?: number;
+  accuracy?: number;
+  targetExam?: string;
+  questionCount?: number;
+  durationSeconds?: number;
+  url?: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  type: ActivityType;
+  title: string;
+  details?: string;
+  subjectName?: string;
+  timestamp: string; // ISO 8601 string
+  formattedDate: string; // e.g. "Aug 24, 2026"
+  formattedTime: string; // e.g. "03:45 PM"
+  metadata?: ActivityMetadata;
+}
+
+

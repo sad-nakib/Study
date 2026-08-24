@@ -10,14 +10,18 @@ import {
   getDocs
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Subject, StudyClass } from '../types';
+import { Subject, StudyClass, ActivityLog, ActivityType, ActivityMetadata } from '../types';
 
 // Helper to remove any undefined or null keys from objects before sending to Firestore
 function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
   const result: Record<string, any> = {};
   for (const [key, val] of Object.entries(obj)) {
     if (val !== undefined && val !== null) {
-      result[key] = val;
+      if (typeof val === 'object' && !Array.isArray(val)) {
+        result[key] = sanitizeForFirestore(val);
+      } else {
+        result[key] = val;
+      }
     }
   }
   return result;
@@ -142,10 +146,18 @@ const INITIAL_CLASSES: StudyClass[] = [
 export function useStudyFirestore() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [classes, setClasses] = useState<StudyClass[]>([]);
+  const [activities, setActivities] = useState<ActivityLog[]>(() => {
+    try {
+      const saved = localStorage.getItem('studyhub_activities');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [isSeeding, setIsSeeding] = useState<boolean>(false);
 
-  // Real-time listener for subjects and classes
+  // Real-time listener for subjects, classes, and activities
   useEffect(() => {
     setLoading(true);
 
@@ -202,9 +214,31 @@ export function useStudyFirestore() {
       }
     );
 
+    const unsubActivities = onSnapshot(
+      collection(db, 'activities'),
+      (snapshot) => {
+        const items: ActivityLog[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push({ id: docSnap.id, ...docSnap.data() } as ActivityLog);
+        });
+        // Sort newest first
+        items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        if (items.length > 0) {
+          setActivities(items);
+          try {
+            localStorage.setItem('studyhub_activities', JSON.stringify(items.slice(0, 100)));
+          } catch {}
+        }
+      },
+      (error) => {
+        console.error('Activities Firestore listener error:', error);
+      }
+    );
+
     return () => {
       unsubSubjects();
       unsubClasses();
+      unsubActivities();
     };
   }, [isSeeding]);
 
@@ -329,9 +363,76 @@ export function useStudyFirestore() {
     }
   };
 
+  // Log User Activity & Movement with exact Date & Time
+  const logActivity = useCallback(async (
+    type: ActivityType,
+    title: string,
+    details?: string,
+    metadata?: ActivityMetadata
+  ) => {
+    const now = new Date();
+    const id = `act-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    const formattedDate = now.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const formattedTime = now.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
+
+    const newActivity: ActivityLog = {
+      id,
+      type,
+      title: title.trim(),
+      details: details ? details.trim() : undefined,
+      subjectName: metadata?.subjectName,
+      timestamp: now.toISOString(),
+      formattedDate,
+      formattedTime,
+      metadata,
+    };
+
+    // Update local state immediately
+    setActivities((prev) => {
+      const updated = [newActivity, ...prev].slice(0, 200);
+      try {
+        localStorage.setItem('studyhub_activities', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    // Write to Firestore asynchronously
+    try {
+      const docRef = doc(db, 'activities', id);
+      const sanitized = sanitizeForFirestore(newActivity);
+      await setDoc(docRef, sanitized);
+    } catch (err) {
+      console.warn('Could not persist activity log to Firestore, preserved in local storage:', err);
+    }
+  }, []);
+
+  // Clear all Activity Logs (Management feature)
+  const clearActivities = async () => {
+    setActivities([]);
+    try {
+      localStorage.removeItem('studyhub_activities');
+      const snapshot = await getDocs(collection(db, 'activities'));
+      const batch = writeBatch(db);
+      snapshot.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    } catch (err) {
+      console.error('Failed to clear activities:', err);
+    }
+  };
+
   return {
     subjects,
     classes,
+    activities,
     loading,
     addSubject,
     updateSubject,
@@ -340,6 +441,8 @@ export function useStudyFirestore() {
     updateClass,
     deleteClass,
     toggleLessonCompleted,
+    logActivity,
+    clearActivities,
     resetData,
   };
 }

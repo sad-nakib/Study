@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Subject, StudyClass } from '../types';
+import { Subject, StudyClass, ActivityLog, ActivityType } from '../types';
 import { 
   ArrowLeft, 
   Plus, 
@@ -16,13 +16,24 @@ import {
   Loader2,
   Lock,
   Layers,
-  Sparkles
+  Sparkles,
+  History,
+  Activity,
+  Calendar,
+  Clock,
+  ExternalLink,
+  Search,
+  CheckCircle2,
+  Zap,
+  Filter,
+  BarChart2
 } from 'lucide-react';
 
 interface EditorViewProps {
   subjects: Subject[];
   classes: StudyClass[];
-  initialMode?: 'add_class' | 'add_subject';
+  activities?: ActivityLog[];
+  initialMode?: 'add_class' | 'add_subject' | 'activities';
   initialSubjectId?: string;
   onBack: () => void;
   onLock?: () => void;
@@ -41,11 +52,13 @@ interface EditorViewProps {
   onUpdateSubject: (id: string, data: Partial<Subject>) => Promise<any>;
   onDeleteSubject: (id: string) => Promise<any>;
   onResetData: () => Promise<any>;
+  onClearActivities?: () => Promise<void>;
 }
 
 export const EditorView: React.FC<EditorViewProps> = ({
   subjects,
   classes,
+  activities = [],
   initialMode = 'add_class',
   initialSubjectId,
   onBack,
@@ -57,8 +70,15 @@ export const EditorView: React.FC<EditorViewProps> = ({
   onUpdateSubject,
   onDeleteSubject,
   onResetData,
+  onClearActivities,
 }) => {
-  const [tab, setTab] = useState<'classes' | 'subjects'>(initialMode === 'add_subject' ? 'subjects' : 'classes');
+  const [tab, setTab] = useState<'classes' | 'subjects' | 'activities'>(
+    initialMode === 'activities' ? 'activities' : initialMode === 'add_subject' ? 'subjects' : 'classes'
+  );
+  
+  // Activity Filter & Search State
+  const [activityFilter, setActivityFilter] = useState<'all' | ActivityType>('all');
+  const [activitySearchQuery, setActivitySearchQuery] = useState<string>('');
   
   // Class Form State
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
@@ -263,7 +283,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
           <div className="flex items-center gap-1 p-1 bg-[#E8DEF8] rounded-full">
             <button
               onClick={() => setTab('classes')}
-              className={`px-5 py-2 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
                 tab === 'classes'
                   ? 'bg-[#6750A4] text-white shadow-xs'
                   : 'text-[#49454F] hover:text-[#1C1B1F]'
@@ -273,13 +293,24 @@ export const EditorView: React.FC<EditorViewProps> = ({
             </button>
             <button
               onClick={() => setTab('subjects')}
-              className={`px-5 py-2 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
                 tab === 'subjects'
                   ? 'bg-[#6750A4] text-white shadow-xs'
                   : 'text-[#49454F] hover:text-[#1C1B1F]'
               }`}
             >
               Subjects ({subjects.length})
+            </button>
+            <button
+              onClick={() => setTab('activities')}
+              className={`px-4 sm:px-5 py-2 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 flex items-center gap-1.5 ${
+                tab === 'activities'
+                  ? 'bg-[#6750A4] text-white shadow-xs'
+                  : 'text-[#49454F] hover:text-[#1C1B1F]'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>History ({activities.length})</span>
             </button>
           </div>
 
@@ -747,6 +778,274 @@ export const EditorView: React.FC<EditorViewProps> = ({
               <span>Reset to Default English, Math, GK Samples</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 3: MOVEMENT & ACTIVITY HISTORY (STUDENT TRACKING & LOGS)            */}
+      {/* ========================================================================= */}
+      {tab === 'activities' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          
+          {/* Summary Overview Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-5 rounded-[24px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-[#B3261E]">
+                <span className="text-xs font-medium uppercase tracking-wider text-[#49454F]">Classes Started</span>
+                <Youtube className="w-4 h-4" />
+              </div>
+              <div className="text-2xl font-bold text-[#1C1B1F]">
+                {activities.filter((a) => a.type === 'class_start').length}
+              </div>
+              <p className="text-[11px] text-[#79747E]">YouTube lectures watched</p>
+            </div>
+
+            <div className="p-5 rounded-[24px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-[#006399]">
+                <span className="text-xs font-medium uppercase tracking-wider text-[#49454F]">Sheets Opened</span>
+                <FileText className="w-4 h-4" />
+              </div>
+              <div className="text-2xl font-bold text-[#1C1B1F]">
+                {activities.filter((a) => a.type === 'sheet_open').length}
+              </div>
+              <p className="text-[11px] text-[#79747E]">Drive lecture notes viewed</p>
+            </div>
+
+            <div className="p-5 rounded-[24px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-[#6750A4]">
+                <span className="text-xs font-medium uppercase tracking-wider text-[#49454F]">Practiced Exams</span>
+                <Zap className="w-4 h-4" />
+              </div>
+              <div className="text-2xl font-bold text-[#1C1B1F]">
+                {activities.filter((a) => a.type === 'practice_complete' || a.type === 'practice_start').length}
+              </div>
+              <p className="text-[11px] text-[#79747E]">Mock tests taken</p>
+            </div>
+
+            <div className="p-5 rounded-[24px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-[#2E6C3B]">
+                <span className="text-xs font-medium uppercase tracking-wider text-[#49454F]">Study Material</span>
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <div className="text-2xl font-bold text-[#1C1B1F]">
+                {activities.filter((a) => a.type === 'book_open').length}
+              </div>
+              <p className="text-[11px] text-[#79747E]">PDFs & books opened</p>
+            </div>
+          </div>
+
+          {/* Search Bar & Filter Controls */}
+          <div className="p-6 rounded-[28px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              {/* Search input */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#79747E]" />
+                <input
+                  type="text"
+                  value={activitySearchQuery}
+                  onChange={(e) => setActivitySearchQuery(e.target.value)}
+                  placeholder="Search history by class, subject, score or date..."
+                  className="w-full h-11 pl-11 pr-4 rounded-full bg-[#FFFBFE] border border-[#CAC4D0] focus:border-[#6750A4] focus:outline-none text-xs text-[#1C1B1F] placeholder:text-[#79747E]"
+                />
+              </div>
+
+              {/* Clear History Button */}
+              {onClearActivities && activities.length > 0 && (
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to clear all recorded user movement history?')) {
+                      await onClearActivities();
+                      showNotification('Movement and activity history cleared successfully');
+                    }
+                  }}
+                  className="h-11 px-5 rounded-full bg-[#FFD8E4] hover:bg-[#FFB0C8] text-[#31111D] text-xs font-medium flex items-center justify-center gap-2 cursor-pointer transition-colors active:scale-95 shadow-xs whitespace-nowrap"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-[#7D5260]" />
+                  <span>Clear History</span>
+                </button>
+              )}
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              {[
+                { id: 'all', label: `All Movement (${activities.length})` },
+                { id: 'class_start', label: `Classes Started (${activities.filter((a) => a.type === 'class_start').length})` },
+                { id: 'sheet_open', label: `Drive Sheets (${activities.filter((a) => a.type === 'sheet_open').length})` },
+                { id: 'practice_complete', label: `Practiced Tests (${activities.filter((a) => a.type === 'practice_complete' || a.type === 'practice_start').length})` },
+                { id: 'book_open', label: `Study Books (${activities.filter((a) => a.type === 'book_open').length})` },
+                { id: 'class_complete', label: `Lessons Completed (${activities.filter((a) => a.type === 'class_complete').length})` },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setActivityFilter(f.id as any)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-150 cursor-pointer ${
+                    activityFilter === f.id
+                      ? 'bg-[#6750A4] text-white shadow-xs'
+                      : 'bg-[#FFFBFE] text-[#49454F] border border-[#CAC4D0]/60 hover:bg-[#E8DEF8]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Activity Timeline List */}
+          {(() => {
+            const filtered = activities.filter((item) => {
+              // Filter by type
+              if (activityFilter !== 'all') {
+                if (activityFilter === 'practice_complete') {
+                  if (item.type !== 'practice_complete' && item.type !== 'practice_start') return false;
+                } else if (item.type !== activityFilter) {
+                  return false;
+                }
+              }
+
+              // Search query
+              if (activitySearchQuery.trim()) {
+                const q = activitySearchQuery.toLowerCase();
+                const matchTitle = item.title?.toLowerCase().includes(q);
+                const matchDetails = item.details?.toLowerCase().includes(q);
+                const matchSubject = item.subjectName?.toLowerCase().includes(q);
+                const matchDate = item.formattedDate?.toLowerCase().includes(q);
+                const matchTime = item.formattedTime?.toLowerCase().includes(q);
+                return matchTitle || matchDetails || matchSubject || matchDate || matchTime;
+              }
+
+              return true;
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="text-center py-16 px-6 rounded-[32px] border-2 border-dashed border-[#CAC4D0] bg-[#F3EDF7]/50 space-y-3">
+                  <div className="w-14 h-14 rounded-full bg-[#E8DEF8] text-[#6750A4] flex items-center justify-center mx-auto">
+                    <History className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-lg font-medium text-[#1C1B1F]">
+                    {activitySearchQuery ? 'No matching activity records found' : 'No Movement Recorded Yet'}
+                  </h3>
+                  <p className="text-xs text-[#49454F] max-w-md mx-auto">
+                    {activitySearchQuery 
+                      ? 'Try adjusting your search terms or filter selection.'
+                      : 'Whenever a student starts a class, opens a Google Drive lecture sheet, reads study material, or practices an exam, the movement history will automatically appear here in real-time with exact date and time.'
+                    }
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between px-2 text-xs font-medium text-[#49454F]">
+                  <span>Showing {filtered.length} of {activities.length} Recorded Movements</span>
+                  <span>Newest First</span>
+                </div>
+
+                <div className="space-y-3">
+                  {filtered.map((item) => {
+                    const isYoutube = item.type === 'class_start';
+                    const isSheet = item.type === 'sheet_open';
+                    const isBook = item.type === 'book_open';
+                    const isPractice = item.type === 'practice_complete' || item.type === 'practice_start';
+                    const isDone = item.type === 'class_complete';
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-5 rounded-[24px] bg-[#FFFBFE] border border-[#CAC4D0]/40 hover:border-[#6750A4]/40 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* Event Icon Badge */}
+                          <div
+                            className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-xs mt-0.5 ${
+                              isYoutube
+                                ? 'bg-[#B3261E]'
+                                : isSheet
+                                ? 'bg-[#006399]'
+                                : isBook
+                                ? 'bg-[#2E6C3B]'
+                                : isPractice
+                                ? 'bg-[#6750A4]'
+                                : 'bg-[#1B5E20]'
+                            }`}
+                          >
+                            {isYoutube && <Youtube className="w-5 h-5 fill-current" />}
+                            {isSheet && <FileText className="w-5 h-5" />}
+                            {isBook && <BookOpen className="w-5 h-5" />}
+                            {isPractice && <Zap className="w-5 h-5" />}
+                            {isDone && <CheckCircle2 className="w-5 h-5" />}
+                          </div>
+
+                          {/* Event Details */}
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-sm text-[#1C1B1F]">
+                                {item.title}
+                              </span>
+                              {item.subjectName && (
+                                <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-[#EADDFF] text-[#21005D]">
+                                  {item.subjectName}
+                                </span>
+                              )}
+                            </div>
+
+                            {item.details && (
+                              <p className="text-xs text-[#49454F] leading-relaxed">
+                                {item.details}
+                              </p>
+                            )}
+
+                            {/* Additional metadata tags if present */}
+                            {item.metadata?.accuracy !== undefined && (
+                              <div className="flex items-center gap-2 text-[11px] font-mono text-[#6750A4] pt-0.5">
+                                <span className="px-2 py-0.5 rounded-md bg-[#E8DEF8]">
+                                  Score: {item.metadata.score}/{item.metadata.maxScore}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-md bg-[#C4EED0] text-[#1B5E20]">
+                                  {item.metadata.accuracy}% Accuracy
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Timestamp & Direct Link Action */}
+                        <div className="flex flex-col sm:items-end gap-1.5 shrink-0 self-end sm:self-center w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-[#CAC4D0]/30">
+                          {/* Date & Time pill */}
+                          <div className="flex items-center gap-2 text-xs font-mono text-[#49454F] bg-[#F3EDF7] px-3 py-1 rounded-full">
+                            <div className="flex items-center gap-1 text-[#1C1B1F]">
+                              <Calendar className="w-3.5 h-3.5 text-[#6750A4]" />
+                              <span>{item.formattedDate}</span>
+                            </div>
+                            <span className="text-[#CAC4D0]">•</span>
+                            <div className="flex items-center gap-1 text-[#49454F]">
+                              <Clock className="w-3.5 h-3.5 text-[#79747E]" />
+                              <span>{item.formattedTime}</span>
+                            </div>
+                          </div>
+
+                          {/* Direct Link if URL is attached */}
+                          {item.metadata?.url && (
+                            <a
+                              href={item.metadata.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] text-[#6750A4] hover:text-[#593E96] hover:underline flex items-center gap-1 font-medium transition-colors"
+                            >
+                              <span>Open Resource Link</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

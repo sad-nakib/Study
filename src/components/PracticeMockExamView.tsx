@@ -7,7 +7,9 @@ import {
   ExamTarget, 
   QuestionSubject, 
   ExamResult, 
-  SectionScore 
+  SectionScore,
+  ActivityType,
+  ActivityMetadata
 } from '../types';
 import { ADMISSION_QUESTION_BANK } from '../data/admissionQuestionBank';
 import { 
@@ -42,15 +44,48 @@ interface PracticeMockExamViewProps {
   classes: StudyClass[];
   preselectedClassId?: string;
   onBackToHome: () => void;
+  onLogActivity?: (type: ActivityType, title: string, details?: string, metadata?: ActivityMetadata) => void;
 }
 
 type ExamMode = 'subject_wise' | 'class_wise';
+
+const TARGET_EXAMS: { id: ExamTarget; name: string; title: string; desc: string; badge: string }[] = [
+  {
+    id: 'bup_fbs',
+    name: 'BUP FBS Admission Test',
+    title: 'BUP FBS Admission Test',
+    desc: 'Faculty of Business Studies (English, Math, GK & Business)',
+    badge: 'BUP FBS',
+  },
+  {
+    id: 'ju_iba',
+    name: 'JU IBA Admission Test',
+    title: 'JU IBA Admission Test',
+    desc: 'Jahangirnagar Univ IBA (English, Advanced Quant, Analytical)',
+    badge: 'JU IBA',
+  },
+  {
+    id: 'ru_iba',
+    name: 'RU IBA Admission Test',
+    title: 'RU IBA Admission Test',
+    desc: 'Rajshahi Univ IBA (Quantitative Aptitude, Grammar, Vocabulary)',
+    badge: 'RU IBA',
+  },
+  {
+    id: 'all',
+    name: 'Combined IBA & FBS Full Mock',
+    title: 'Combined IBA & FBS Full Mock',
+    desc: 'Comprehensive multi-section exam covering all admission topics',
+    badge: 'Full Mock',
+  },
+];
 
 export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
   subjects,
   classes,
   preselectedClassId,
   onBackToHome,
+  onLogActivity,
 }) => {
   // Phase state: 'setup' | 'exam' | 'result'
   const [phase, setPhase] = useState<'setup' | 'exam' | 'result'>('setup');
@@ -247,6 +282,26 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
     setExamStartTime(Date.now());
     setPhase('exam');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Log Activity: Practice Exam Started
+    if (onLogActivity) {
+      const targetExamName = TARGET_EXAMS.find((t) => t.id === selectedTarget)?.name || selectedTarget;
+      const scopeDesc = examMode === 'class_wise'
+        ? `Class: ${classes.find((c) => c.id === selectedClassId)?.title || 'Class Practice'}`
+        : `Subject: ${selectedSubjectFilter === 'all' ? 'All Subjects' : selectedSubjectFilter === 'analytical' ? 'Analytical Ability' : selectedSubjectFilter.toUpperCase()}`;
+      onLogActivity(
+        'practice_start',
+        `Started Practice Exam (${targetExamName})`,
+        `${questionCount} Questions • ${timeLimitMinutes} min limit • ${scopeDesc}`,
+        {
+          targetExam: targetExamName,
+          questionCount,
+          durationSeconds: timeLimitMinutes * 60,
+          classId: selectedClassId || undefined,
+          className: classes.find((c) => c.id === selectedClassId)?.title,
+        }
+      );
+    }
   };
 
   // Select Option for a specific question
@@ -335,6 +390,24 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
     setExamResult(result);
     setPhase('result');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Log Activity: Practice Exam Completed
+    if (onLogActivity) {
+      const targetExamName = TARGET_EXAMS.find((t) => t.id === selectedTarget)?.name || selectedTarget;
+      onLogActivity(
+        'practice_complete',
+        `Completed Practice Exam: Score ${netScore}/${maxScore} (${accuracy}% Accuracy)`,
+        `Target: ${targetExamName} • Attempted ${result.attemptedCount}/${result.totalQuestions} (${result.correctCount} Correct, ${result.incorrectCount} Incorrect) in ${Math.floor(elapsed / 60)}m ${elapsed % 60}s`,
+        {
+          targetExam: targetExamName,
+          score: netScore,
+          maxScore,
+          accuracy,
+          durationSeconds: elapsed,
+          questionCount: result.totalQuestions,
+        }
+      );
+    }
 
     // Trigger phone vibration and celebratory confetti animation
     triggerCelebration();
@@ -555,7 +628,7 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
                       { id: 'all', label: 'All Subjects (Full Test)' },
                       { id: 'english', label: 'English' },
                       { id: 'math', label: 'Mathematics' },
-                      { id: 'gk', label: 'General Knowledge' },
+                      { id: 'analytical', label: 'Analytical Ability' },
                     ].map((s) => (
                       <button
                         key={s.id}
@@ -1101,6 +1174,12 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {Object.entries(examResult.sectionScores).map(([secName, val]) => {
                 const secData = val as { correct: number; incorrect: number; unattempted: number; total: number; marks: number };
+                const displaySecName = 
+                  secName === 'analytical' ? 'Analytical Ability' :
+                  secName === 'english' ? 'English Language' :
+                  secName === 'math' ? 'Mathematics' :
+                  secName === 'gk' ? 'General Knowledge' : secName;
+
                 return (
                   <div
                     key={secName}
@@ -1108,7 +1187,7 @@ export const PracticeMockExamView: React.FC<PracticeMockExamViewProps> = ({
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium uppercase tracking-wider text-[#1C1B1F]">
-                        {secName}
+                        {displaySecName}
                       </span>
                       <span className="text-xs font-mono font-bold text-[#6750A4]">
                         {secData.marks.toFixed(2)} / {secData.total}

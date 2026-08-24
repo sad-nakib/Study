@@ -12,6 +12,7 @@ export default function App() {
   const {
     subjects,
     classes,
+    activities,
     loading,
     addSubject,
     updateSubject,
@@ -21,6 +22,8 @@ export default function App() {
     deleteClass,
     resetData,
     toggleLessonCompleted,
+    logActivity,
+    clearActivities,
   } = useStudyFirestore();
 
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('home');
@@ -160,6 +163,7 @@ export default function App() {
                 onBack={handleBackToHome}
                 onToggleCompleted={toggleLessonCompleted}
                 onLaunchPracticeForClass={(classId) => handleOpenPractice(classId || undefined)}
+                onLogActivity={logActivity}
               />
             )}
 
@@ -170,14 +174,16 @@ export default function App() {
                 subjects={subjects}
                 preselectedClassId={practiceClassId}
                 onBack={handleBackToHome}
+                onLogActivity={logActivity}
               />
             )}
 
-            {/* 4. EDITOR SCREEN: EDIT / DELETE / ADD ONLY ACCESSIBLE HERE (PASSWORD PROTECTED) */}
+            {/* 4. EDITOR SCREEN: EDIT / DELETE / ADD & MOVEMENT HISTORY (PASSWORD PROTECTED) */}
             {activeScreen === 'editor' && isEditorUnlocked && (
               <EditorView
                 subjects={subjects}
                 classes={classes}
+                activities={activities}
                 onBack={handleBackToHome}
                 onLock={handleLockEditor}
                 onAddClass={addClass}
@@ -187,6 +193,7 @@ export default function App() {
                 onUpdateSubject={updateSubject}
                 onDeleteSubject={deleteSubject}
                 onResetData={resetData}
+                onClearActivities={clearActivities}
               />
             )}
           </>

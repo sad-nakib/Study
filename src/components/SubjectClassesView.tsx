@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Subject, StudyClass } from '../types';
+import { Subject, StudyClass, ActivityType, ActivityMetadata } from '../types';
 import { 
   ArrowLeft, 
   Youtube, 
@@ -22,6 +22,7 @@ interface SubjectClassesViewProps {
   onBack: () => void;
   onToggleCompleted?: (classId: string, currentStatus?: boolean) => void;
   onLaunchPracticeForClass?: (classId: string) => void;
+  onLogActivity?: (type: ActivityType, title: string, details?: string, metadata?: ActivityMetadata) => void;
 }
 
 export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
@@ -30,6 +31,7 @@ export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
   onBack,
   onToggleCompleted,
   onLaunchPracticeForClass,
+  onLogActivity,
 }) => {
   const [activeClassModal, setActiveClassModal] = useState<StudyClass | null>(null);
 
@@ -38,33 +40,75 @@ export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
   const progressPercent = subjectClasses.length > 0 ? Math.round((completedCount / subjectClasses.length) * 100) : 0;
 
   // Helper to open YouTube app/browser
-  const handleOpenYoutube = (e: React.MouseEvent, url: string) => {
+  const handleOpenYoutube = (e: React.MouseEvent, classItem: StudyClass) => {
     e.stopPropagation();
-    if (!url) {
+    if (!classItem.youtubeUrl) {
       alert('No YouTube link available for this class.');
       return;
     }
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (onLogActivity) {
+      onLogActivity(
+        'class_start',
+        `Started Class: ${classItem.title}`,
+        `Subject: ${subject.name}${classItem.topic ? ` • Topic: ${classItem.topic}` : ''}${classItem.instructor ? ` • Instructor: ${classItem.instructor}` : ''}`,
+        {
+          classId: classItem.id,
+          className: classItem.title,
+          subjectId: subject.id,
+          subjectName: subject.name,
+          url: classItem.youtubeUrl,
+        }
+      );
+    }
+    window.open(classItem.youtubeUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Helper to open Google Drive sheet
-  const handleOpenDriveSheet = (e: React.MouseEvent, url?: string) => {
+  const handleOpenDriveSheet = (e: React.MouseEvent, classItem: StudyClass) => {
     e.stopPropagation();
-    if (!url) {
+    if (!classItem.driveSheetUrl) {
       alert('No Google Drive sheet link available for this class.');
       return;
     }
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (onLogActivity) {
+      onLogActivity(
+        'sheet_open',
+        `Opened Lecture Sheet: ${classItem.title}`,
+        `Subject: ${subject.name}${classItem.topic ? ` • Topic: ${classItem.topic}` : ''}`,
+        {
+          classId: classItem.id,
+          className: classItem.title,
+          subjectId: subject.id,
+          subjectName: subject.name,
+          url: classItem.driveSheetUrl,
+        }
+      );
+    }
+    window.open(classItem.driveSheetUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Helper to open Book PDF
-  const handleOpenBookPdf = (e: React.MouseEvent, url?: string) => {
+  const handleOpenBookPdf = (e: React.MouseEvent, classItem: StudyClass) => {
     e.stopPropagation();
-    if (!url) {
+    if (!classItem.bookPdfUrl) {
       alert('No book PDF link available for this class.');
       return;
     }
-    window.open(url, '_blank', 'noopener,noreferrer');
+    if (onLogActivity) {
+      onLogActivity(
+        'book_open',
+        `Opened Study Material / PDF: ${classItem.title}`,
+        `Subject: ${subject.name}`,
+        {
+          classId: classItem.id,
+          className: classItem.title,
+          subjectId: subject.id,
+          subjectName: subject.name,
+          url: classItem.bookPdfUrl,
+        }
+      );
+    }
+    window.open(classItem.bookPdfUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -226,7 +270,7 @@ export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
                     
                     {/* OPTION 1: "Watch Class" -> Opens YouTube App / Player */}
                     <button
-                      onClick={(e) => handleOpenYoutube(e, item.youtubeUrl)}
+                      onClick={(e) => handleOpenYoutube(e, item)}
                       className="h-11 flex items-center justify-center gap-2 px-4 rounded-full bg-[#B3261E] hover:bg-[#9C2019] text-white font-medium text-xs shadow-xs active:scale-95 transition-all duration-200 cursor-pointer"
                       title="Watch class lecture on YouTube"
                     >
@@ -236,7 +280,7 @@ export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
 
                     {/* OPTION 2: "Drive Sheet" -> Opens Google Drive Link */}
                     <button
-                      onClick={(e) => handleOpenDriveSheet(e, item.driveSheetUrl)}
+                      onClick={(e) => handleOpenDriveSheet(e, item)}
                       className={`h-11 flex items-center justify-center gap-2 px-4 rounded-full font-medium text-xs shadow-xs transition-all duration-200 cursor-pointer active:scale-95 ${
                         item.driveSheetUrl
                           ? 'bg-[#006399] hover:bg-[#00517D] text-white'
@@ -263,7 +307,7 @@ export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
                   {/* OPTION 4 (Optional): Study Book PDF if present */}
                   {item.bookPdfUrl && (
                     <button
-                      onClick={(e) => handleOpenBookPdf(e, item.bookPdfUrl)}
+                      onClick={(e) => handleOpenBookPdf(e, item)}
                       className="w-full h-9 flex items-center justify-center gap-2 px-4 rounded-full bg-[#2E6C3B]/12 hover:bg-[#2E6C3B]/20 text-[#1B5E20] font-medium text-xs transition-all duration-200 cursor-pointer active:scale-95"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
@@ -333,7 +377,7 @@ export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
               {/* Option 1: YouTube Class */}
               <button
                 onClick={(e) => {
-                  handleOpenYoutube(e, activeClassModal.youtubeUrl);
+                  handleOpenYoutube(e, activeClassModal);
                   setActiveClassModal(null);
                 }}
                 className="w-full flex items-center justify-between p-4 rounded-full bg-[#B3261E] hover:bg-[#9C2019] text-white font-medium text-sm shadow-xs transition-all duration-200 cursor-pointer active:scale-95"
@@ -353,7 +397,7 @@ export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
               {/* Option 2: Drive Sheet */}
               <button
                 onClick={(e) => {
-                  handleOpenDriveSheet(e, activeClassModal.driveSheetUrl);
+                  handleOpenDriveSheet(e, activeClassModal);
                   setActiveClassModal(null);
                 }}
                 className={`w-full flex items-center justify-between p-4 rounded-full font-medium text-sm shadow-xs transition-all duration-200 cursor-pointer active:scale-95 ${
@@ -401,7 +445,7 @@ export const SubjectClassesView: React.FC<SubjectClassesViewProps> = ({
               {activeClassModal.bookPdfUrl && (
                 <button
                   onClick={(e) => {
-                    handleOpenBookPdf(e, activeClassModal.bookPdfUrl);
+                    handleOpenBookPdf(e, activeClassModal);
                     setActiveClassModal(null);
                   }}
                   className="w-full flex items-center justify-between p-4 rounded-full bg-[#2E6C3B] hover:bg-[#23532D] text-white font-medium text-sm shadow-xs transition-all duration-200 cursor-pointer active:scale-95"
