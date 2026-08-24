@@ -23,6 +23,7 @@ export interface ClassItem {
   topic?: string;
   instructor?: string;
   dateAdded: string;
+  isCompleted?: boolean;
 }
 
 interface DatabaseSchema {
@@ -328,11 +329,265 @@ async function startServer() {
     res.json({ success: true, deletedClassId: id });
   });
 
+  // Toggle Lesson Completion in Local Store
+  app.patch("/api/classes/:id/complete", (req, res) => {
+    const { id } = req.params;
+    const { isCompleted } = req.body;
+    const data = readDatabase();
+    const index = data.classes.findIndex((c) => c.id === id);
+    if (index === -1) {
+      res.status(404).json({ error: "Class not found" });
+      return;
+    }
+    data.classes[index].isCompleted = typeof isCompleted === 'boolean' ? isCompleted : !data.classes[index].isCompleted;
+    writeDatabase(data);
+    res.json(data.classes[index]);
+  });
+
+  // AI Practice Exam Generator Route (OpenRouter + Gemini + Adaptive Fallback)
+  app.post("/api/practice/generate", async (req, res) => {
+    try {
+      const {
+        target = "bup_fbs",
+        subjectFilter = "all",
+        questionCount = 10,
+        specificTopic,
+        sheetContext,
+        model = "google/gemini-2.0-flash-001",
+      } = req.body;
+
+      const targetTitleMap: Record<string, string> = {
+        bup_fbs: "BUP FBS (Faculty of Business Studies) Admission Test",
+        ju_iba: "Jahangirnagar University IBA (JU IBA) Admission Test",
+        ru_iba: "Rajshahi University IBA (RU IBA) Admission Test",
+        all: "Combined BUP FBS & IBA Admission Standard",
+      };
+
+      const targetLabel = targetTitleMap[target] || "BUP FBS & IBA Admission Test";
+
+      const promptSystem = `You are a premier university admission test setter specializing in Bangladesh's top business schools:
+1. BUP FBS (Bangladesh University of Professionals - Faculty of Business Studies)
+2. JU IBA (Jahangirnagar University - Institute of Business Administration)
+3. RU IBA (Rajshahi University - Institute of Business Administration)
+
+Your questions MUST strictly match the exact difficulty, question format, and standards of these competitive admission exams.
+Standards:
+- English: Parallelism, Dangling Modifiers, Subjunctive Mood, Subject-Verb Agreement, Inversion, Appropriate Prepositions, Contextual Fill in the Blanks, Word Analogies, Error Detection, Reading Comprehension.
+- Mathematics: High-standard Quantitative Aptitude (Time-Speed-Distance, Ratio-Proportion, Mixtures & Alligation, Time & Work, Profit-Loss & Successive Discounts, Permutations & Combinations, Probability, Geometry & Coordinate Geometry, Quadratics & Functions).
+- GK / Business Affairs: Bangladesh economy, national mega-projects, constitution, banking & business terms, international treaties, UN agencies, global geography.
+- Analytical Ability / Critical Reasoning: Statement-Assumption, Cause-Effect, Syllogisms, Argument strengthening/weakening.
+
+${sheetContext ? `CONTEXT FROM CLASS LECTURE SHEET: ${sheetContext}` : ''}
+
+You MUST return a pure JSON object in this exact format:
+{
+  "questions": [
+    {
+      "id": "q1",
+      "subject": "english" | "math" | "gk" | "analytical",
+      "targetExam": "${targetLabel}",
+      "topic": "Specific Topic Name",
+      "passage": "Optional reading passage if RC question",
+      "question": "Clear, precise problem statement with 4 or 5 options",
+      "options": ["Option A", "Option B", "Option C", "Option D", "Option E"],
+      "correctIndex": 0, // integer 0 to options.length - 1
+      "explanation": "Thorough, step-by-step mathematical or grammatical reasoning explaining WHY the correct option is right and others are wrong",
+      "formulaOrRule": "The fundamental formula or grammatical rule utilized",
+      "difficulty": "Easy" | "Medium" | "Hard"
+    }
+  ]
+}`;
+
+      const promptUser = `Generate exactly ${Math.min(Math.max(Number(questionCount) || 10, 3), 25)} realistic MCQ practice questions for target: "${targetLabel}".
+Subject Filter: ${subjectFilter}.
+${specificTopic ? `Specific Focus Topic: ${specificTopic}` : ''}
+Make sure every question has high analytical rigor, tricky distractor options, and crystal-clear step-by-step explanations with formulas/rules. Output valid JSON only.`;
+
+      const openRouterKey = process.env.OPENROUTER_API_KEY;
+      const geminiKey = process.env.GEMINI_API_KEY;
+
+      // 1. Attempt OpenRouter if key is available
+      if (openRouterKey && openRouterKey !== "MY_OPENROUTER_API_KEY") {
+        try {
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${openRouterKey}`,
+              "HTTP-Referer": process.env.APP_URL || "https://studyhub.ai.studio",
+              "X-Title": "StudyHub BUP IBA Mock Exam",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: model || "google/gemini-2.0-flash-001",
+              messages: [
+                { role: "system", content: promptSystem },
+                { role: "user", content: promptUser }
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.4,
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const rawContent = data.choices?.[0]?.message?.content;
+            if (rawContent) {
+              const cleanJson = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+              const parsed = JSON.parse(cleanJson);
+              if (parsed.questions && Array.isArray(parsed.questions)) {
+                res.json({
+                  source: "openrouter",
+                  model: model || "google/gemini-2.0-flash-001",
+                  questions: parsed.questions.map((q: any, i: number) => ({
+                    ...q,
+                    id: q.id || `ai-${Date.now()}-${i}`,
+                  })),
+                });
+                return;
+              }
+            }
+          }
+        } catch (orErr) {
+          console.warn("OpenRouter fetch error, attempting fallback:", orErr);
+        }
+      }
+
+      // 2. Fallback to Gemini if key available
+      if (geminiKey && geminiKey !== "MY_GEMINI_API_KEY") {
+        try {
+          const { GoogleGenAI } = await import("@google/genai");
+          const ai = new GoogleGenAI({
+            apiKey: geminiKey,
+            httpOptions: {
+              headers: {
+                "User-Agent": "aistudio-build",
+              },
+            },
+          });
+          const response = await ai.models.generateContent({
+            model: "gemini-3.7-flash",
+            contents: `${promptSystem}\n\n${promptUser}`,
+            config: {
+              responseMimeType: "application/json",
+              temperature: 0.4,
+            },
+          });
+
+          const rawText = response.text || "";
+          const parsed = JSON.parse(rawText);
+          if (parsed.questions && Array.isArray(parsed.questions)) {
+            res.json({
+              source: "gemini",
+              model: "gemini-3.7-flash",
+              questions: parsed.questions.map((q: any, i: number) => ({
+                ...q,
+                id: q.id || `gemini-${Date.now()}-${i}`,
+              })),
+            });
+            return;
+          }
+        } catch (geminiErr) {
+          console.warn("Gemini API call error, falling back to curated bank:", geminiErr);
+        }
+      }
+
+      // 3. Fallback to High-Caliber Authentic Curated Question Bank
+      res.json({
+        source: "curated_bank",
+        message: "Using calibrated authentic BUP FBS, JU IBA & RU IBA admission test question bank.",
+        questions: [], // Frontend will seamlessly draw from the verified bank
+      });
+    } catch (err: any) {
+      console.error("Practice generation route error:", err);
+      res.status(500).json({ error: err.message || "Failed to generate practice exam" });
+    }
+  });
+
+  // AI Doubt Solver / In-Depth Explanation Route
+  app.post("/api/practice/explain", async (req, res) => {
+    try {
+      const { question, options, correctOption, chosenOption, userDoubt } = req.body;
+      const prompt = `You are a master admission coach for BUP FBS and IBA. A student is practicing and needs a crystal-clear, pedagogical explanation for the following admission question:
+
+QUESTION:
+${question}
+
+OPTIONS:
+${options ? options.map((opt: string, idx: number) => `${String.fromCharCode(65 + idx)}. ${opt}`).join('\n') : ''}
+
+CORRECT OPTION: ${correctOption}
+STUDENT'S SELECTION: ${chosenOption || 'None (Unattempted)'}
+${userDoubt ? `STUDENT'S SPECIFIC QUESTION / CONFUSION: "${userDoubt}"` : ''}
+
+Provide a structured, encouraging explanation covering:
+1. Core Concept & Formula/Rule Breakdown
+2. Step-by-Step Solution & Shortcut Techniques
+3. Common Trap / Pitfall to Avoid in BUP & IBA admission exams
+Keep it concise, clear, and actionable.`;
+
+      const openRouterKey = process.env.OPENROUTER_API_KEY;
+      const geminiKey = process.env.GEMINI_API_KEY;
+
+      if (openRouterKey && openRouterKey !== "MY_OPENROUTER_API_KEY") {
+        try {
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${openRouterKey}`,
+              "HTTP-Referer": process.env.APP_URL || "https://studyhub.ai.studio",
+              "X-Title": "StudyHub Doubt Solver",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.0-flash-001",
+              messages: [{ role: "user", content: prompt }],
+            }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const text = data.choices?.[0]?.message?.content;
+            if (text) {
+              res.json({ explanation: text });
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn("OpenRouter explain error:", e);
+        }
+      }
+
+      if (geminiKey && geminiKey !== "MY_GEMINI_API_KEY") {
+        const { GoogleGenAI } = await import("@google/genai");
+        const ai = new GoogleGenAI({
+          apiKey: geminiKey,
+          httpOptions: {
+            headers: {
+              "User-Agent": "aistudio-build",
+            },
+          },
+        });
+        const resp = await ai.models.generateContent({
+          model: "gemini-3.7-flash",
+          contents: prompt,
+        });
+        res.json({ explanation: resp.text || "Detailed breakdown provided." });
+        return;
+      }
+
+      res.json({
+        explanation: `Explanation Strategy:\n1. Re-check the fundamental rule and identify keywords in the question.\n2. In BUP and IBA exams, watch out for distractors that test secondary rules.\n3. Eliminate options systematically based on structural constraints.`,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || "Failed to generate explanation" });
+    }
+  });
+
   // Reset to default data
   app.post("/api/reset", (_req, res) => {
     writeDatabase(DEFAULT_DATA);
     res.json(DEFAULT_DATA);
   });
+
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

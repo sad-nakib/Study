@@ -1,6 +1,6 @@
 {
   "name": "StudyHub - Class & Resource Organizer",
-  "description": "Centralize and organize YouTube lecture classes, Google Drive lecture sheets, and book PDFs organized by subject.",
+  "description": "Centralize and organize YouTube lecture classes, Google Drive lecture sheets, book PDFs, lesson completion tracking, and admission mock practice exams for BUP FBS, JU IBA, and RU IBA.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

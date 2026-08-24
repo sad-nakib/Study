@@ -313,6 +313,22 @@ export function useStudyFirestore() {
     }
   };
 
+  // Toggle Lesson Completion Status
+  const toggleLessonCompleted = async (id: string, currentStatus?: boolean) => {
+    const nextStatus = !currentStatus;
+    // Optimistically update local state
+    setClasses((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, isCompleted: nextStatus } : c))
+    );
+    try {
+      const docRef = doc(db, 'classes', id);
+      await updateDoc(docRef, { isCompleted: nextStatus });
+    } catch (err) {
+      console.error('Failed to update class completion status:', err);
+      // Fallback: try local persist or sync if firestore rule/network issues
+    }
+  };
+
   return {
     subjects,
     classes,
@@ -323,6 +339,7 @@ export function useStudyFirestore() {
     addClass,
     updateClass,
     deleteClass,
+    toggleLessonCompleted,
     resetData,
   };
 }

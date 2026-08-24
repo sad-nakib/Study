@@ -14,7 +14,9 @@ import {
   AlertCircle,
   RotateCcw,
   Loader2,
-  Lock
+  Lock,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
 interface EditorViewProps {
@@ -224,73 +226,80 @@ export const EditorView: React.FC<EditorViewProps> = ({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const colors = ['indigo', 'emerald', 'amber', 'rose', 'sky', 'purple'];
+  const colors = [
+    { key: 'indigo', label: 'Purple', bg: 'bg-[#6750A4]' },
+    { key: 'emerald', label: 'Emerald', bg: 'bg-[#2E6C3B]' },
+    { key: 'amber', label: 'Amber', bg: 'bg-[#8C5000]' },
+    { key: 'rose', label: 'Rose', bg: 'bg-[#984061]' },
+    { key: 'sky', label: 'Blue', bg: 'bg-[#006399]' },
+    { key: 'purple', label: 'Mauve', bg: 'bg-[#7D5260]' },
+  ];
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto animate-in fade-in duration-300">
+    <div className="space-y-8 max-w-5xl mx-auto animate-in fade-in duration-300">
       
-      {/* Editor Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg">
+      {/* Material 3 Editor Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-7 rounded-[32px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-sm">
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 transition-colors cursor-pointer"
+            className="w-12 h-12 rounded-full bg-[#E8DEF8] text-[#1D192B] hover:bg-[#D0BCFF] active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer shadow-xs"
             title="Back to Home Tiles"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              Admin & Link Manager
+            <span className="text-xs font-medium px-3 py-0.5 rounded-full bg-[#EADDFF] text-[#21005D]">
+              Admin & Resource Manager
             </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-medium tracking-tight text-[#1C1B1F] mt-1">
               Editor: Add & Manage Links
             </h1>
           </div>
         </div>
 
-        {/* Tab Toggle: Manage Classes vs Manage Subjects */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+        {/* Material 3 Segmented Toggle & Lock */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1 p-1 bg-[#E8DEF8] rounded-full">
             <button
               onClick={() => setTab('classes')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-5 py-2 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
                 tab === 'classes'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  ? 'bg-[#6750A4] text-white shadow-xs'
+                  : 'text-[#49454F] hover:text-[#1C1B1F]'
               }`}
             >
-              Add & Manage Classes ({classes.length})
+              Classes ({classes.length})
             </button>
             <button
               onClick={() => setTab('subjects')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`px-5 py-2 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
                 tab === 'subjects'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  ? 'bg-[#6750A4] text-white shadow-xs'
+                  : 'text-[#49454F] hover:text-[#1C1B1F]'
               }`}
             >
-              Add & Manage Subjects ({subjects.length})
+              Subjects ({subjects.length})
             </button>
           </div>
 
           {onLock && (
             <button
               onClick={onLock}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 text-slate-600 dark:text-slate-300 text-xs font-bold transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
+              className="h-10 flex items-center gap-1.5 px-4 rounded-full bg-[#FFD8E4] text-[#31111D] hover:bg-[#FFB0C8] text-xs font-medium active:scale-95 transition-all duration-200 cursor-pointer shadow-xs"
               title="Lock and exit editor"
             >
-              <Lock className="w-3.5 h-3.5" />
+              <Lock className="w-3.5 h-3.5 text-[#7D5260]" />
               <span>Lock</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Feedback Banner */}
+      {/* Material 3 Snackbar Notification */}
       {feedbackMsg && (
-        <div className={`p-4 rounded-2xl text-white font-bold text-xs flex items-center gap-2 shadow-lg animate-in fade-in ${
-          feedbackMsg.type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'
+        <div className={`p-4 px-6 rounded-full text-sm font-medium flex items-center gap-3 shadow-md animate-in fade-in ${
+          feedbackMsg.type === 'success' ? 'bg-[#1B5E20] text-[#C4EED0]' : 'bg-[#B3261E] text-[#F9DEDC]'
         }`}>
           {feedbackMsg.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           <span>{feedbackMsg.text}</span>
@@ -299,51 +308,51 @@ export const EditorView: React.FC<EditorViewProps> = ({
 
       {/* TAB 1: ADD & MANAGE CLASSES */}
       {tab === 'classes' && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           
-          {/* Add / Edit Class Form */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-red-500/10 text-red-500">
+          {/* Add / Edit Class Form Card */}
+          <div className="p-8 rounded-[32px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-6">
+            <div className="flex items-center justify-between border-b border-[#CAC4D0]/40 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#B3261E]/10 text-[#B3261E] flex items-center justify-center">
                   <Youtube className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                    {editingClassId ? 'Edit Class & Links' : 'Add New Class'}
+                  <h2 className="text-xl font-medium text-[#1C1B1F]">
+                    {editingClassId ? 'Edit Class & Resource Links' : 'Add New Class'}
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Paste YouTube video link & Google Drive sheet link for this class
+                  <p className="text-xs text-[#49454F]">
+                    Attach YouTube video & Google Drive lecture sheet links
                   </p>
                 </div>
               </div>
               {editingClassId && (
                 <button
                   onClick={handleCancelEditClass}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                  className="h-9 px-4 rounded-full text-xs font-medium text-[#49454F] bg-[#E8DEF8] hover:bg-[#D0BCFF] transition-colors cursor-pointer"
                 >
                   Cancel Edit
                 </button>
               )}
             </div>
 
-            <form onSubmit={handleSubmitClass} className="space-y-4 pt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmitClass} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Choose Subject */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                    Select Subject <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
+                    Select Subject *
                   </label>
                   {subjects.length === 0 ? (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs rounded-xl border border-amber-200 dark:border-amber-800">
-                      No subjects available. Please add a subject first in the "Add & Manage Subjects" tab.
+                    <div className="p-3 bg-[#FFDDB3]/40 text-[#603500] text-xs rounded-xl border border-[#8C5000]/30">
+                      No subjects available. Please add a subject in the "Subjects" tab.
                     </div>
                   ) : (
                     <select
                       required
                       value={classSubjectId}
                       onChange={(e) => setClassSubjectId(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer font-medium"
+                      className="w-full h-13 px-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#6750A4] focus:outline-none cursor-pointer font-medium"
                     >
                       {subjects.map((s) => (
                         <option key={s.id} value={s.id}>
@@ -356,8 +365,8 @@ export const EditorView: React.FC<EditorViewProps> = ({
 
                 {/* Class Title */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                    Class Title <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
+                    Class Title *
                   </label>
                   <input
                     type="text"
@@ -365,16 +374,16 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     value={classTitle}
                     onChange={(e) => setClassTitle(e.target.value)}
                     placeholder="e.g. Class 04: Grammar & Modifiers"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-13 px-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#6750A4] focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* YouTube Link & Drive Sheet Link */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                    YouTube Class Link (Video URL) <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
+                    YouTube Class Link (Video URL) *
                   </label>
                   <div className="relative">
                     <input
@@ -383,14 +392,14 @@ export const EditorView: React.FC<EditorViewProps> = ({
                       value={classYoutubeUrl}
                       onChange={(e) => setClassYoutubeUrl(e.target.value)}
                       placeholder="https://www.youtube.com/watch?v=..."
-                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full h-13 pl-11 pr-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#B3261E] focus:outline-none"
                     />
-                    <Youtube className="w-4 h-4 text-red-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Youtube className="w-5 h-5 text-[#B3261E] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
                     Google Drive Sheet / Slides Link
                   </label>
                   <div className="relative">
@@ -399,17 +408,17 @@ export const EditorView: React.FC<EditorViewProps> = ({
                       value={classDriveSheetUrl}
                       onChange={(e) => setClassDriveSheetUrl(e.target.value)}
                       placeholder="https://docs.google.com/document/d/... or drive link"
-                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full h-13 pl-11 pr-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#006399] focus:outline-none"
                     />
-                    <FileText className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <FileText className="w-5 h-5 text-[#006399] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
               </div>
 
               {/* Optional Book/PDF Link & Topic */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
                     Study Material / Book PDF Link (Optional)
                   </label>
                   <div className="relative">
@@ -418,14 +427,14 @@ export const EditorView: React.FC<EditorViewProps> = ({
                       value={classBookPdfUrl}
                       onChange={(e) => setClassBookPdfUrl(e.target.value)}
                       placeholder="https://drive.google.com/file/d/... or textbook link"
-                      className="w-full pl-9 pr-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full h-13 pl-11 pr-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#2E6C3B] focus:outline-none"
                     />
-                    <BookOpen className="w-4 h-4 text-emerald-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <BookOpen className="w-5 h-5 text-[#2E6C3B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
                     Topic / Instructor (Optional)
                   </label>
                   <input
@@ -433,22 +442,22 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     value={classTopic}
                     onChange={(e) => setClassTopic(e.target.value)}
                     placeholder="e.g. Topic: Active Voice | Prof. David"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-13 px-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#6750A4] focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div className="flex justify-end pt-2">
+              {/* Material 3 Pill Action Button */}
+              <div className="flex justify-end pt-3">
                 <button
                   type="submit"
                   disabled={isSubmitting || subjects.length === 0}
-                  className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
+                  className="h-12 px-7 rounded-full bg-[#6750A4] hover:bg-[#593E96] disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-95 flex items-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Saving to Firebase...</span>
+                      <span>Saving to Firestore...</span>
                     </>
                   ) : (
                     <>
@@ -461,50 +470,50 @@ export const EditorView: React.FC<EditorViewProps> = ({
             </form>
           </div>
 
-          {/* List of Existing Classes */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          {/* List of Existing Classes Card */}
+          <div className="p-8 rounded-[32px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-4">
+            <h3 className="text-lg font-medium text-[#1C1B1F]">
               All Saved Classes ({classes.length})
             </h3>
 
             {classes.length === 0 ? (
-              <p className="text-xs text-slate-400 py-4 text-center">No classes stored in Firebase yet.</p>
+              <p className="text-xs text-[#49454F] py-6 text-center">No classes stored in Firebase yet.</p>
             ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              <div className="divide-y divide-[#CAC4D0]/30">
                 {classes.map((cls) => {
                   const subject = subjects.find((s) => s.id === cls.subjectId);
                   return (
                     <div
                       key={cls.id}
-                      className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                      className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                     >
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           {subject && (
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[#E8DEF8] text-[#1D192B]">
                               {subject.name}
                             </span>
                           )}
-                          <span className="text-sm font-bold text-slate-900 dark:text-white">
+                          <span className="text-sm font-medium text-[#1C1B1F]">
                             {cls.title}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
+                        <div className="flex items-center gap-3 text-xs text-[#49454F] mt-1.5 flex-wrap">
                           <a
                             href={cls.youtubeUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+                            className="text-[#B3261E] hover:underline flex items-center gap-1"
                           >
                             <Youtube className="w-3.5 h-3.5" />
-                            <span>YouTube Link</span>
+                            <span>YouTube Video</span>
                           </a>
                           {cls.driveSheetUrl && (
                             <a
                               href={cls.driveSheetUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                              className="text-[#006399] hover:underline flex items-center gap-1"
                             >
                               <FileText className="w-3.5 h-3.5" />
                               <span>Drive Sheet</span>
@@ -516,9 +525,9 @@ export const EditorView: React.FC<EditorViewProps> = ({
                       <div className="flex items-center gap-2 self-end sm:self-auto">
                         <button
                           onClick={() => handleEditClassClick(cls)}
-                          className="p-2 rounded-xl text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                          className="h-9 px-4 rounded-full bg-[#E8DEF8] text-[#1D192B] hover:bg-[#D0BCFF] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <Edit3 className="w-3.5 h-3.5 text-[#6750A4]" />
                           <span>Edit</span>
                         </button>
                         <button
@@ -528,9 +537,9 @@ export const EditorView: React.FC<EditorViewProps> = ({
                               showNotification('Class removed from Firebase');
                             }
                           }}
-                          className="p-2 rounded-xl text-rose-600 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                          className="h-9 px-4 rounded-full bg-[#FFD8E4] text-[#31111D] hover:bg-[#FFB0C8] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3.5 h-3.5 text-[#7D5260]" />
                           <span>Delete</span>
                         </button>
                       </div>
@@ -545,21 +554,21 @@ export const EditorView: React.FC<EditorViewProps> = ({
 
       {/* TAB 2: ADD & MANAGE SUBJECTS */}
       {tab === 'subjects' && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           
-          {/* Add / Edit Subject Form */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500">
+          {/* Add / Edit Subject Form Card */}
+          <div className="p-8 rounded-[32px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-6">
+            <div className="flex items-center justify-between border-b border-[#CAC4D0]/40 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#EADDFF] text-[#21005D] flex items-center justify-center">
                   <FolderPlus className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                    {editingSubjectId ? 'Edit Subject' : 'Add New Subject'}
+                  <h2 className="text-xl font-medium text-[#1C1B1F]">
+                    {editingSubjectId ? 'Edit Subject Details' : 'Add New Subject'}
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Creates a new subject tile on the main home screen
+                  <p className="text-xs text-[#49454F]">
+                    Creates a personalized Material You subject card on the home screen
                   </p>
                 </div>
               </div>
@@ -571,18 +580,18 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     setSubjectCode('');
                     setSubjectDescription('');
                   }}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                  className="h-9 px-4 rounded-full text-xs font-medium text-[#49454F] bg-[#E8DEF8] hover:bg-[#D0BCFF] transition-colors cursor-pointer"
                 >
                   Cancel Edit
                 </button>
               )}
             </div>
 
-            <form onSubmit={handleSubmitSubject} className="space-y-4 pt-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmitSubject} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                    Subject Name <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
+                    Subject Name *
                   </label>
                   <input
                     type="text"
@@ -590,12 +599,12 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     value={subjectName}
                     onChange={(e) => setSubjectName(e.target.value)}
                     placeholder="e.g. Physics, Bangla, ICT, Chemistry"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-13 px-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#6750A4] focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                  <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
                     Subject Code (Short)
                   </label>
                   <input
@@ -603,35 +612,36 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     value={subjectCode}
                     onChange={(e) => setSubjectCode(e.target.value)}
                     placeholder="e.g. PHY, BAN, ICT"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                    className="w-full h-13 px-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#6750A4] focus:outline-none font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                  Subject Theme Color
+                <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-2">
+                  Theme Palette
                 </label>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                   {colors.map((c) => (
                     <button
-                      key={c}
+                      key={c.key}
                       type="button"
-                      onClick={() => setSubjectColor(c)}
-                      className={`p-2.5 rounded-xl border text-xs font-bold capitalize transition-all cursor-pointer ${
-                        subjectColor === c
-                          ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 ring-2 ring-indigo-500 text-indigo-700 dark:text-indigo-300'
-                          : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                      onClick={() => setSubjectColor(c.key)}
+                      className={`h-11 rounded-full text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 ${
+                        subjectColor === c.key
+                          ? 'bg-[#EADDFF] text-[#21005D] ring-2 ring-[#6750A4] shadow-xs'
+                          : 'bg-[#E7E0EC] text-[#49454F] hover:bg-[#DED8E1]'
                       }`}
                     >
-                      {c}
+                      <span className={`w-3.5 h-3.5 rounded-full ${c.bg}`} />
+                      <span>{c.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-[#49454F] uppercase tracking-wider mb-1.5">
                   Description / Topic Focus (Optional)
                 </label>
                 <input
@@ -639,15 +649,15 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   value={subjectDescription}
                   onChange={(e) => setSubjectDescription(e.target.value)}
                   placeholder="Short summary of this subject..."
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-13 px-4 text-sm bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 border-[#79747E] focus:border-[#6750A4] focus:outline-none"
                 />
               </div>
 
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end pt-3">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
+                  className="h-12 px-7 rounded-full bg-[#6750A4] hover:bg-[#593E96] disabled:opacity-50 text-white font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer active:scale-95 flex items-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -665,9 +675,9 @@ export const EditorView: React.FC<EditorViewProps> = ({
             </form>
           </div>
 
-          {/* List of Existing Subjects */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          {/* List of Existing Subjects Card */}
+          <div className="p-8 rounded-[32px] bg-[#F3EDF7] border border-[#CAC4D0]/40 shadow-xs space-y-4">
+            <h3 className="text-lg font-medium text-[#1C1B1F]">
               All Subjects ({subjects.length})
             </h3>
 
@@ -677,20 +687,20 @@ export const EditorView: React.FC<EditorViewProps> = ({
                 return (
                   <div
                     key={s.id}
-                    className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between gap-3"
+                    className="p-5 rounded-[24px] bg-[#FFFBFE] border border-[#CAC4D0]/40 flex items-center justify-between gap-3 shadow-xs"
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 dark:text-white">
+                        <span className="font-medium text-[#1C1B1F]">
                           {s.name}
                         </span>
                         {s.code && (
-                          <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700">
+                          <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-[#E8DEF8] text-[#1D192B]">
                             {s.code}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      <p className="text-xs text-[#49454F] mt-1">
                         {count} {count === 1 ? 'Class' : 'Classes'}
                       </p>
                     </div>
@@ -698,9 +708,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEditSubjectClick(s)}
-                        className="p-2 rounded-xl text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-xs font-semibold transition-colors shadow-xs cursor-pointer"
+                        className="w-9 h-9 rounded-full bg-[#E8DEF8] text-[#1D192B] hover:bg-[#D0BCFF] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                        title="Edit Subject"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
+                        <Edit3 className="w-4 h-4 text-[#6750A4]" />
                       </button>
                       <button
                         onClick={async () => {
@@ -709,9 +720,10 @@ export const EditorView: React.FC<EditorViewProps> = ({
                             showNotification('Subject and classes removed from Firebase');
                           }
                         }}
-                        className="p-2 rounded-xl text-rose-600 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-xs font-semibold transition-colors cursor-pointer"
+                        className="w-9 h-9 rounded-full bg-[#FFD8E4] text-[#31111D] hover:bg-[#FFB0C8] flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+                        title="Delete Subject"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4 text-[#7D5260]" />
                       </button>
                     </div>
                   </div>
@@ -721,7 +733,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
           </div>
 
           {/* Reset to defaults option */}
-          <div className="pt-4 flex justify-center">
+          <div className="pt-2 flex justify-center">
             <button
               onClick={async () => {
                 if (window.confirm('Reset data in Firebase to default English, Math, and GK curriculum?')) {
@@ -729,7 +741,7 @@ export const EditorView: React.FC<EditorViewProps> = ({
                   showNotification('Reset to sample subjects & classes in Firebase');
                 }
               }}
-              className="flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-rose-600 px-4 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="h-10 px-5 rounded-full flex items-center gap-2 text-xs font-medium text-[#49454F] hover:bg-[#E8DEF8] transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset to Default English, Math, GK Samples</span>

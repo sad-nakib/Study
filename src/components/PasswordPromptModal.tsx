@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Lock, KeyRound, Eye, EyeOff, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Lock, KeyRound, Eye, EyeOff, AlertCircle, X } from 'lucide-react';
 
 interface PasswordPromptModalProps {
   isOpen: boolean;
@@ -42,42 +42,42 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
   const handleKeyPress = (num: string) => {
     setError(false);
     if (password.length < 10) {
-      setPassword(prev => prev + num);
+      setPassword((prev) => prev + num);
     }
   };
 
   const handleBackspace = () => {
     setError(false);
-    setPassword(prev => prev.slice(0, -1));
+    setPassword((prev) => prev.slice(0, -1));
   };
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onCancel}
     >
       <div 
-        className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 relative"
+        className="w-full max-w-sm bg-[#FFFBFE] rounded-[36px] border border-[#CAC4D0]/50 p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-200 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onCancel}
-          className="absolute right-4 top-4 p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="absolute right-5 top-5 w-9 h-9 rounded-full bg-[#F3EDF7] hover:bg-[#E8DEF8] flex items-center justify-center text-[#49454F] transition-colors cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         {/* Lock Header */}
-        <div className="text-center space-y-2 pt-2">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto border border-indigo-200 dark:border-indigo-800 shadow-md">
+        <div className="text-center space-y-2 pt-1">
+          <div className="w-14 h-14 rounded-full bg-[#EADDFF] text-[#21005D] flex items-center justify-center mx-auto shadow-xs">
             <Lock className="w-7 h-7" />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
-              Editor Login
+            <h2 className="text-2xl font-medium text-[#1C1B1F]">
+              Editor Access
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-[#49454F] mt-1">
               Enter passcode to manage classes and subjects
             </p>
           </div>
@@ -85,6 +85,7 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* M3 Filled Input */}
           <div className="relative">
             <input
               ref={inputRef}
@@ -96,18 +97,18 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
                 setError(false);
                 setPassword(e.target.value);
               }}
-              placeholder="Enter passcode"
-              className={`w-full pl-10 pr-10 py-3 text-center text-lg tracking-widest font-mono bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border ${
+              placeholder="•••••"
+              className={`w-full pl-11 pr-11 h-14 text-center text-xl tracking-widest font-mono bg-[#E7E0EC] text-[#1C1B1F] rounded-t-xl rounded-b-none border-b-2 ${
                 error 
-                  ? 'border-rose-500 ring-2 ring-rose-500/30' 
-                  : 'border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500'
-              } rounded-2xl focus:outline-none transition-all`}
+                  ? 'border-[#B3261E] bg-[#F9DEDC]' 
+                  : 'border-[#79747E] focus:border-[#6750A4]'
+              } focus:outline-none transition-colors duration-200`}
             />
-            <KeyRound className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <KeyRound className="w-5 h-5 text-[#79747E] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#79747E] hover:text-[#1C1B1F] p-1 cursor-pointer"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -115,20 +116,20 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
 
           {/* Error Message */}
           {error && (
-            <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-rose-500 dark:text-rose-400 animate-in fade-in">
+            <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-[#B3261E] animate-in fade-in">
               <AlertCircle className="w-4 h-4" />
               <span>Incorrect passcode. Please try again.</span>
             </div>
           )}
 
-          {/* Quick On-Screen Keypad */}
-          <div className="grid grid-cols-3 gap-2 pt-1">
+          {/* Material 3 On-Screen Keypad */}
+          <div className="grid grid-cols-3 gap-2.5 pt-1">
             {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
               <button
                 key={digit}
                 type="button"
                 onClick={() => handleKeyPress(digit)}
-                className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-600 text-slate-800 dark:text-slate-200 font-bold text-base transition-colors cursor-pointer active:scale-95"
+                className="h-12 rounded-full bg-[#F3EDF7] hover:bg-[#E8DEF8] text-[#1C1B1F] font-medium text-lg active:scale-95 transition-all duration-150 cursor-pointer shadow-xs"
               >
                 {digit}
               </button>
@@ -136,21 +137,21 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
             <button
               type="button"
               onClick={() => setPassword('')}
-              className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold hover:bg-slate-200 transition-colors cursor-pointer"
+              className="h-12 rounded-full bg-[#F3EDF7] hover:bg-[#E8DEF8] text-[#49454F] text-xs font-medium active:scale-95 transition-all duration-150 cursor-pointer"
             >
               Clear
             </button>
             <button
               type="button"
               onClick={() => handleKeyPress('0')}
-              className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-600 text-slate-800 dark:text-slate-200 font-bold text-base transition-colors cursor-pointer active:scale-95"
+              className="h-12 rounded-full bg-[#F3EDF7] hover:bg-[#E8DEF8] text-[#1C1B1F] font-medium text-lg active:scale-95 transition-all duration-150 cursor-pointer shadow-xs"
             >
               0
             </button>
             <button
               type="button"
               onClick={handleBackspace}
-              className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold hover:bg-slate-200 transition-colors cursor-pointer"
+              className="h-12 rounded-full bg-[#F3EDF7] hover:bg-[#E8DEF8] text-[#49454F] text-xs font-medium active:scale-95 transition-all duration-150 cursor-pointer"
             >
               ⌫
             </button>
@@ -159,7 +160,7 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-sm shadow-md shadow-indigo-600/30 transition-all cursor-pointer mt-2"
+            className="w-full h-12 rounded-full bg-[#6750A4] hover:bg-[#593E96] active:scale-95 text-white font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer mt-2"
           >
             Unlock Editor
           </button>
